@@ -1,318 +1,330 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Users, Shield, UserCheck, UserX, Edit, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
-import { Users, Shield, Lock } from "lucide-react";
 
-interface Permission {
-  module: string;
-  moduleMarathi: string;
-  canView: boolean;
-  canAdd: boolean;
-  canEdit: boolean;
-  canDelete: boolean;
-  canDownload: boolean;
-}
-
-interface UserPermissions {
-  userId: string;
-  username: string;
+interface Employee {
+  id: string;
   name: string;
-  role: 'admin' | 'employee';
+  username: string;
+  role: 'employee';
   isActive: boolean;
-  permissions: Permission[];
+  permissions: {
+    master: boolean;
+    transactions: boolean;
+    reports: boolean;
+    dairyReports: boolean;
+    system: boolean;
+  };
 }
 
 const PermissionManager = () => {
   const { user } = useAuth();
-  const [language, setLanguage] = useState<"english" | "marathi">("english");
-  const [selectedUser, setSelectedUser] = useState<string>("");
-
-  const [users, setUsers] = useState<UserPermissions[]>([
+  const [employees, setEmployees] = useState<Employee[]>([
     {
-      userId: "2",
-      username: "employee1",
-      name: "Employee One",
-      role: "employee",
+      id: '2',
+      name: 'राम पाटील',
+      username: 'employee1',
+      role: 'employee',
       isActive: true,
-      permissions: [
-        {
-          module: "Centre Management",
-          moduleMarathi: "केंद्र व्यवस्थापन",
-          canView: true,
-          canAdd: false,
-          canEdit: false,
-          canDelete: false,
-          canDownload: true
-        },
-        {
-          module: "Farmer Management",
-          moduleMarathi: "शेतकरी व्यवस्थापन",
-          canView: true,
-          canAdd: true,
-          canEdit: true,
-          canDelete: false,
-          canDownload: true
-        },
-        {
-          module: "Milk Collection",
-          moduleMarathi: "दूध संकलन",
-          canView: true,
-          canAdd: true,
-          canEdit: true,
-          canDelete: false,
-          canDownload: false
-        },
-        {
-          module: "Reports",
-          moduleMarathi: "अहवाल",
-          canView: true,
-          canAdd: false,
-          canEdit: false,
-          canDelete: false,
-          canDownload: true
-        },
-        {
-          module: "System Management",
-          moduleMarathi: "सिस्टम व्यवस्थापन",
-          canView: false,
-          canAdd: false,
-          canEdit: false,
-          canDelete: false,
-          canDownload: false
-        }
-      ]
+      permissions: {
+        master: true,
+        transactions: true,
+        reports: false,
+        dairyReports: false,
+        system: false
+      }
+    },
+    {
+      id: '3',
+      name: 'सीता शर्मा',
+      username: 'employee2',
+      role: 'employee',
+      isActive: false,
+      permissions: {
+        master: false,
+        transactions: true,
+        reports: true,
+        dairyReports: false,
+        system: false
+      }
     }
   ]);
 
-  const modules = [
-    { name: "Centre Management", nameMarathi: "केंद्र व्यवस्थापन" },
-    { name: "Farmer Management", nameMarathi: "शेतकरी व्यवस्थापन" },
-    { name: "Milk Buyers", nameMarathi: "दूध खरेदीदार" },
-    { name: "Milk Pricing", nameMarathi: "दूध किंमत" },
-    { name: "Fodder Management", nameMarathi: "खाद्य व्यवस्थापन" },
-    { name: "Milk Collection", nameMarathi: "दूध संकलन" },
-    { name: "Milk Delivery", nameMarathi: "दूध वितरण" },
-    { name: "Payment Management", nameMarathi: "पेमेंट व्यवस्थापन" },
-    { name: "Reports", nameMarathi: "अहवाल" },
-    { name: "Dairy Reports", nameMarathi: "डेअरी अहवाल" },
-    { name: "System Management", nameMarathi: "सिस्टम व्यवस्थापन" }
-  ];
+  const [newEmployee, setNewEmployee] = useState({
+    name: '',
+    username: '',
+    password: ''
+  });
 
-  const updatePermission = (userId: string, module: string, permission: keyof Omit<Permission, 'module' | 'moduleMarathi'>, value: boolean) => {
-    setUsers(users.map(user => {
-      if (user.userId === userId) {
-        return {
-          ...user,
-          permissions: user.permissions.map(perm => 
-            perm.module === module 
-              ? { ...perm, [permission]: value }
-              : perm
-          )
-        };
-      }
-      return user;
-    }));
-
-    toast({
-      title: language === "english" ? "Permission Updated" : "परवानगी अपडेट केली",
-      description: language === "english" ? "User permissions updated successfully" : "वापरकर्ता परवानग्या यशस्वीरित्या अपडेट केल्या"
-    });
-  };
-
-  const toggleUserStatus = (userId: string) => {
-    setUsers(users.map(user => 
-      user.userId === userId 
-        ? { ...user, isActive: !user.isActive }
-        : user
-    ));
-
-    const targetUser = users.find(u => u.userId === userId);
-    toast({
-      title: language === "english" ? "User Status Updated" : "वापरकर्ता स्थिती अपडेट केली",
-      description: language === "english" 
-        ? `User ${targetUser?.isActive ? 'deactivated' : 'activated'} successfully`
-        : `वापरकर्ता ${targetUser?.isActive ? 'निष्क्रिय' : 'सक्रिय'} यशस्वीरित्या केला`
-    });
-  };
+  const [editingEmployee, setEditingEmployee] = useState<string | null>(null);
 
   if (user?.role !== 'admin') {
     return (
-      <Card className="border-red-200">
-        <CardContent className="text-center py-8">
-          <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-red-800 mb-2">
-            {language === "english" ? "Access Denied" : "प्रवेश नाकारला"}
-          </h3>
-          <p className="text-red-600">
-            {language === "english" 
-              ? "Only administrators can manage user permissions"
-              : "केवळ प्रशासक वापरकर्ता परवानग्या व्यवस्थापित करू शकतात"
-            }
-          </p>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center text-red-600">
+            <Shield className="h-12 w-12 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Access Denied</h3>
+            <p>Only administrators can manage user permissions.</p>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  const selectedUserData = users.find(u => u.userId === selectedUser);
+  const handleAddEmployee = () => {
+    if (!newEmployee.name || !newEmployee.username || !newEmployee.password) {
+      toast({
+        title: "Error",
+        description: "Please fill all fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const employee: Employee = {
+      id: Date.now().toString(),
+      name: newEmployee.name,
+      username: newEmployee.username,
+      role: 'employee',
+      isActive: true,
+      permissions: {
+        master: false,
+        transactions: false,
+        reports: false,
+        dairyReports: false,
+        system: false
+      }
+    };
+
+    setEmployees([...employees, employee]);
+    setNewEmployee({ name: '', username: '', password: '' });
+    
+    toast({
+      title: "Success",
+      description: `Employee ${employee.name} added successfully`
+    });
+  };
+
+  const toggleEmployeeStatus = (employeeId: string) => {
+    setEmployees(employees.map(emp => 
+      emp.id === employeeId 
+        ? { ...emp, isActive: !emp.isActive }
+        : emp
+    ));
+    
+    const employee = employees.find(emp => emp.id === employeeId);
+    toast({
+      title: "Status Updated",
+      description: `${employee?.name} is now ${employee?.isActive ? 'inactive' : 'active'}`
+    });
+  };
+
+  const updatePermission = (employeeId: string, permission: keyof Employee['permissions'], value: boolean) => {
+    setEmployees(employees.map(emp => 
+      emp.id === employeeId 
+        ? { 
+            ...emp, 
+            permissions: { 
+              ...emp.permissions, 
+              [permission]: value 
+            } 
+          }
+        : emp
+    ));
+  };
+
+  const deleteEmployee = (employeeId: string) => {
+    const employee = employees.find(emp => emp.id === employeeId);
+    setEmployees(employees.filter(emp => emp.id !== employeeId));
+    
+    toast({
+      title: "Employee Deleted",
+      description: `${employee?.name} has been removed from the system`
+    });
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-semibold flex items-center gap-2">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-800">Permission Management</h1>
+        <p className="text-gray-600">Manage employee access and permissions</p>
+      </div>
+
+      {/* Add New Employee */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            {language === "english" ? "Permission Management" : "परवानगी व्यवस्थापन"}
-          </h2>
-          <p className="text-gray-600">
-            {language === "english" ? "Control employee access to system modules" : "सिस्टम मॉड्यूलमध्ये कर्मचारी प्रवेश नियंत्रित करा"}
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setLanguage(language === "english" ? "marathi" : "english")}
-        >
-          {language === "english" ? "मराठी" : "English"}
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* User List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{language === "english" ? "Users" : "वापरकर्ते"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {users.map((userData) => (
-                <div
-                  key={userData.userId}
-                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                    selectedUser === userData.userId ? 'border-green-500 bg-green-50' : 'hover:bg-gray-50'
-                  }`}
-                  onClick={() => setSelectedUser(userData.userId)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{userData.name}</p>
-                      <p className="text-sm text-gray-600">@{userData.username}</p>
-                      <Badge variant={userData.role === 'admin' ? 'default' : 'secondary'} className="mt-1">
-                        {userData.role === 'admin' 
-                          ? (language === "english" ? "Admin" : "प्रशासक")
-                          : (language === "english" ? "Employee" : "कर्मचारी")
-                        }
-                      </Badge>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <Badge variant={userData.isActive ? 'default' : 'destructive'}>
-                        {userData.isActive 
-                          ? (language === "english" ? "Active" : "सक्रिय")
-                          : (language === "english" ? "Inactive" : "निष्क्रिय")
-                        }
-                      </Badge>
-                      <Switch
-                        checked={userData.isActive}
-                        onCheckedChange={() => toggleUserStatus(userData.userId)}
-                        size="sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
+            Add New Employee
+          </CardTitle>
+          <CardDescription>Create new employee account with custom permissions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="name">Employee Name</Label>
+              <Input
+                id="name"
+                value={newEmployee.name}
+                onChange={(e) => setNewEmployee({...newEmployee, name: e.target.value})}
+                placeholder="Enter full name"
+              />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                value={newEmployee.username}
+                onChange={(e) => setNewEmployee({...newEmployee, username: e.target.value})}
+                placeholder="Enter username"
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={newEmployee.password}
+                onChange={(e) => setNewEmployee({...newEmployee, password: e.target.value})}
+                placeholder="Enter password"
+              />
+            </div>
+          </div>
+          <Button onClick={handleAddEmployee} className="mt-4">
+            Add Employee
+          </Button>
+        </CardContent>
+      </Card>
 
-        {/* Permission Settings */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5" />
-              {language === "english" ? "Module Permissions" : "मॉड्यूल परवानग्या"}
-            </CardTitle>
-            {selectedUserData && (
-              <p className="text-sm text-gray-600">
-                {language === "english" ? "Managing permissions for" : "यासाठी परवानग्या व्यवस्थापित करत आहे"}: {selectedUserData.name}
-              </p>
-            )}
-          </CardHeader>
-          <CardContent>
-            {!selectedUser ? (
-              <div className="text-center py-8 text-gray-500">
-                {language === "english" ? "Select a user to manage permissions" : "परवानग्या व्यवस्थापित करण्यासाठी वापरकर्ता निवडा"}
-              </div>
-            ) : selectedUserData ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{language === "english" ? "Module" : "मॉड्यूल"}</TableHead>
-                      <TableHead className="text-center">{language === "english" ? "View" : "पहा"}</TableHead>
-                      <TableHead className="text-center">{language === "english" ? "Add" : "जोडा"}</TableHead>
-                      <TableHead className="text-center">{language === "english" ? "Edit" : "संपादित"}</TableHead>
-                      <TableHead className="text-center">{language === "english" ? "Delete" : "हटवा"}</TableHead>
-                      <TableHead className="text-center">{language === "english" ? "Download" : "डाउनलोड"}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selectedUserData.permissions.map((permission, index) => (
-                      <TableRow key={permission.module}>
-                        <TableCell className="font-medium">
-                          {language === "english" ? permission.module : permission.moduleMarathi}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Switch
-                            checked={permission.canView}
-                            onCheckedChange={(value) => updatePermission(selectedUser, permission.module, 'canView', value)}
-                            size="sm"
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Switch
-                            checked={permission.canAdd}
-                            onCheckedChange={(value) => updatePermission(selectedUser, permission.module, 'canAdd', value)}
-                            size="sm"
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Switch
-                            checked={permission.canEdit}
-                            onCheckedChange={(value) => updatePermission(selectedUser, permission.module, 'canEdit', value)}
-                            size="sm"
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Switch
-                            checked={permission.canDelete}
-                            onCheckedChange={(value) => updatePermission(selectedUser, permission.module, 'canDelete', value)}
-                            size="sm"
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Switch
-                            checked={permission.canDownload}
-                            onCheckedChange={(value) => updatePermission(selectedUser, permission.module, 'canDownload', value)}
-                            size="sm"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Employee List and Permissions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Employee Permissions</CardTitle>
+          <CardDescription>Manage access levels for each employee</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employee</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Master</TableHead>
+                  <TableHead>Transactions</TableHead>
+                  <TableHead>Reports</TableHead>
+                  <TableHead>Dairy Reports</TableHead>
+                  <TableHead>System</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {employees.map((employee) => (
+                  <TableRow key={employee.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{employee.name}</div>
+                        <div className="text-sm text-gray-500">@{employee.username}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={employee.isActive}
+                          onCheckedChange={() => toggleEmployeeStatus(employee.id)}
+                        />
+                        <Badge variant={employee.isActive ? "default" : "secondary"}>
+                          {employee.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={employee.permissions.master}
+                        onCheckedChange={(value) => updatePermission(employee.id, 'master', value)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={employee.permissions.transactions}
+                        onCheckedChange={(value) => updatePermission(employee.id, 'transactions', value)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={employee.permissions.reports}
+                        onCheckedChange={(value) => updatePermission(employee.id, 'reports', value)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={employee.permissions.dairyReports}
+                        onCheckedChange={(value) => updatePermission(employee.id, 'dairyReports', value)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={employee.permissions.system}
+                        onCheckedChange={(value) => updatePermission(employee.id, 'system', value)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingEmployee(employee.id)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteEmployee(employee.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Permission Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Permission Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {['master', 'transactions', 'reports', 'dairyReports', 'system'].map((permission) => {
+              const count = employees.filter(emp => 
+                emp.isActive && emp.permissions[permission as keyof Employee['permissions']]
+              ).length;
+              
+              return (
+                <div key={permission} className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{count}</div>
+                  <div className="text-sm text-gray-600 capitalize">{permission}</div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
