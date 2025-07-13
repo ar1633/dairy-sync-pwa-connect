@@ -1,294 +1,286 @@
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Edit2, Trash2, MapPin } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Trash2, Edit, Plus, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+type PaymentCycle = "weekly" | "bi-weekly" | "monthly";
 
 interface Centre {
   id: string;
-  centreNumber: string;
-  centreName: string;
+  number: string;
+  name: string;
+  nameMarathi: string;
   address: string;
-  paymentCycle: 'weekly' | 'bi-weekly' | 'monthly';
-  contactPerson?: string;
-  phoneNumber?: string;
-  createdAt: string;
+  addressMarathi: string;
+  paymentCycle: PaymentCycle;
 }
 
 const CentreManagement = () => {
   const [centres, setCentres] = useState<Centre[]>([
     {
-      id: '1',
-      centreNumber: 'C001',
-      centreName: 'Shirakhed Centre',
-      address: 'Village Shirakhed, Tal. Karveer, Dist. Kolhapur',
-      paymentCycle: 'weekly',
-      contactPerson: 'Ramesh Patil',
-      phoneNumber: '9876543210',
-      createdAt: '2024-01-15'
-    },
-    {
-      id: '2',
-      centreNumber: 'C002',
-      centreName: 'Kagal Centre',
-      address: 'Village Kagal, Tal. Kagal, Dist. Kolhapur',
-      paymentCycle: 'bi-weekly',
-      contactPerson: 'Suresh Kumar',
-      phoneNumber: '9876543211',
-      createdAt: '2024-01-20'
+      id: "1",
+      number: "001",
+      name: "Main Dairy Centre",
+      nameMarathi: "मुख्य डेअरी केंद्र",
+      address: "Village Road, Pune",
+      addressMarathi: "गाव रोड, पुणे",
+      paymentCycle: "weekly"
     }
   ]);
 
-  const [showForm, setShowForm] = useState(false);
-  const [editingCentre, setEditingCentre] = useState<Centre | null>(null);
   const [formData, setFormData] = useState({
-    centreNumber: '',
-    centreName: '',
-    address: '',
-    paymentCycle: 'weekly' as const,
-    contactPerson: '',
-    phoneNumber: ''
+    number: "",
+    name: "",
+    nameMarathi: "",
+    address: "",
+    addressMarathi: "",
+    paymentCycle: "weekly" as PaymentCycle
   });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [language, setLanguage] = useState<"english" | "marathi">("english");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingCentre) {
+    if (isEditing && editingId) {
       setCentres(centres.map(centre => 
-        centre.id === editingCentre.id 
-          ? { ...centre, ...formData }
+        centre.id === editingId 
+          ? { ...formData, id: editingId }
           : centre
       ));
       toast({
-        title: "Centre Updated",
-        description: "Centre information has been updated successfully.",
+        title: language === "english" ? "Centre Updated" : "केंद्र अपडेट केले",
+        description: language === "english" ? "Centre information updated successfully" : "केंद्र माहिती यशस्वीरित्या अपडेट केली"
       });
     } else {
       const newCentre: Centre = {
-        id: Date.now().toString(),
         ...formData,
-        createdAt: new Date().toISOString().split('T')[0]
+        id: Date.now().toString()
       };
       setCentres([...centres, newCentre]);
       toast({
-        title: "Centre Added",
-        description: "New centre has been added successfully.",
+        title: language === "english" ? "Centre Added" : "केंद्र जोडले",
+        description: language === "english" ? "New centre added successfully" : "नवीन केंद्र यशस्वीरित्या जोडले"
       });
     }
-    
-    resetForm();
-  };
 
-  const resetForm = () => {
     setFormData({
-      centreNumber: '',
-      centreName: '',
-      address: '',
-      paymentCycle: 'weekly',
-      contactPerson: '',
-      phoneNumber: ''
+      number: "",
+      name: "",
+      nameMarathi: "",
+      address: "",
+      addressMarathi: "",
+      paymentCycle: "weekly"
     });
-    setShowForm(false);
-    setEditingCentre(null);
+    setIsEditing(false);
+    setEditingId(null);
   };
 
   const handleEdit = (centre: Centre) => {
-    setFormData({
-      centreNumber: centre.centreNumber,
-      centreName: centre.centreName,
-      address: centre.address,
-      paymentCycle: centre.paymentCycle,
-      contactPerson: centre.contactPerson || '',
-      phoneNumber: centre.phoneNumber || ''
-    });
-    setEditingCentre(centre);
-    setShowForm(true);
+    setFormData(centre);
+    setIsEditing(true);
+    setEditingId(centre.id);
   };
 
   const handleDelete = (id: string) => {
     setCentres(centres.filter(centre => centre.id !== id));
     toast({
-      title: "Centre Deleted",
-      description: "Centre has been removed successfully.",
+      title: language === "english" ? "Centre Deleted" : "केंद्र हटवले",
+      description: language === "english" ? "Centre removed successfully" : "केंद्र यशस्वीरित्या काढले"
+    });
+  };
+
+  const downloadPDF = () => {
+    toast({
+      title: language === "english" ? "PDF Download" : "पीडीएफ डाउनलोड",
+      description: language === "english" ? "PDF generation feature coming soon" : "पीडीएफ तयार करण्याचे वैशिष्ट्य लवकरच येत आहे"
     });
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Centre Information Management</h2>
-        <Button onClick={() => setShowForm(true)} className="bg-green-600 hover:bg-green-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Centre
-        </Button>
+        <div>
+          <h2 className="text-xl font-semibold">
+            {language === "english" ? "Centre Management" : "केंद्र व्यवस्थापन"}
+          </h2>
+          <p className="text-gray-600">
+            {language === "english" ? "Manage dairy collection centres" : "डेअरी संकलन केंद्रे व्यवस्थापित करा"}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLanguage(language === "english" ? "marathi" : "english")}
+          >
+            {language === "english" ? "मराठी" : "English"}
+          </Button>
+          <Button onClick={downloadPDF} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            {language === "english" ? "Download PDF" : "पीडीएफ डाउनलोड"}
+          </Button>
+        </div>
       </div>
 
-      {showForm && (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>{editingCentre ? 'Edit Centre' : 'Add New Centre'}</CardTitle>
-            <CardDescription>
-              Enter the centre details below
-            </CardDescription>
+            <CardTitle>
+              {isEditing 
+                ? (language === "english" ? "Edit Centre" : "केंद्र संपादित करा")
+                : (language === "english" ? "Add New Centre" : "नवीन केंद्र जोडा")
+              }
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="centreNumber">Centre Number *</Label>
-                  <Input
-                    id="centreNumber"
-                    value={formData.centreNumber}
-                    onChange={(e) => setFormData({...formData, centreNumber: e.target.value})}
-                    placeholder="e.g., C001"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="centreName">Centre Name *</Label>
-                  <Input
-                    id="centreName"
-                    value={formData.centreName}
-                    onChange={(e) => setFormData({...formData, centreName: e.target.value})}
-                    placeholder="e.g., Shirakhed Centre"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address">Address *</Label>
-                <Textarea
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
-                  placeholder="Complete address with village, taluka, district"
+              <div>
+                <Label>{language === "english" ? "Centre Number" : "केंद्र क्रमांक"}</Label>
+                <Input
+                  value={formData.number}
+                  onChange={(e) => setFormData({...formData, number: e.target.value})}
+                  placeholder={language === "english" ? "Enter centre number" : "केंद्र क्रमांक प्रविष्ट करा"}
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="paymentCycle">Payment Cycle</Label>
-                  <Select
-                    value={formData.paymentCycle}
-                    onValueChange={(value: 'weekly' | 'bi-weekly' | 'monthly') => 
-                      setFormData({...formData, paymentCycle: value})
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="bi-weekly">Bi-Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="contactPerson">Contact Person</Label>
-                  <Input
-                    id="contactPerson"
-                    value={formData.contactPerson}
-                    onChange={(e) => setFormData({...formData, contactPerson: e.target.value})}
-                    placeholder="Name of contact person"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phoneNumber">Phone Number</Label>
-                  <Input
-                    id="phoneNumber"
-                    type="tel"
-                    value={formData.phoneNumber}
-                    onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
-                    placeholder="Contact phone number"
-                  />
-                </div>
+              <div>
+                <Label>{language === "english" ? "Centre Name (English)" : "केंद्राचे नाव (इंग्रजी)"}</Label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  placeholder={language === "english" ? "Enter centre name" : "केंद्राचे नाव प्रविष्ट करा"}
+                  required
+                />
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <Button type="submit" className="bg-green-600 hover:bg-green-700">
-                  {editingCentre ? 'Update Centre' : 'Add Centre'}
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
+              <div>
+                <Label>{language === "english" ? "Centre Name (Marathi)" : "केंद्राचे नाव (मराठी)"}</Label>
+                <Input
+                  value={formData.nameMarathi}
+                  onChange={(e) => setFormData({...formData, nameMarathi: e.target.value})}
+                  placeholder={language === "english" ? "Enter centre name in Marathi" : "मराठीत केंद्राचे नाव प्रविष्ट करा"}
+                  required
+                />
               </div>
+
+              <div>
+                <Label>{language === "english" ? "Address (English)" : "पत्ता (इंग्रजी)"}</Label>
+                <Input
+                  value={formData.address}
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  placeholder={language === "english" ? "Enter address" : "पत्ता प्रविष्ट करा"}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label>{language === "english" ? "Address (Marathi)" : "पत्ता (मराठी)"}</Label>
+                <Input
+                  value={formData.addressMarathi}
+                  onChange={(e) => setFormData({...formData, addressMarathi: e.target.value})}
+                  placeholder={language === "english" ? "Enter address in Marathi" : "मराठीत पत्ता प्रविष्ट करा"}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label>{language === "english" ? "Payment Cycle" : "पेमेंट सायकल"}</Label>
+                <Select
+                  value={formData.paymentCycle}
+                  onValueChange={(value: PaymentCycle) => setFormData({...formData, paymentCycle: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">
+                      {language === "english" ? "Weekly" : "साप्ताहिक"}
+                    </SelectItem>
+                    <SelectItem value="bi-weekly">
+                      {language === "english" ? "Bi-weekly" : "पाक्षिक"}
+                    </SelectItem>
+                    <SelectItem value="monthly">
+                      {language === "english" ? "Monthly" : "मासिक"}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button type="submit" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                {isEditing 
+                  ? (language === "english" ? "Update Centre" : "केंद्र अपडेट करा")
+                  : (language === "english" ? "Add Centre" : "केंद्र जोडा")
+                }
+              </Button>
             </form>
           </CardContent>
         </Card>
-      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {centres.map((centre) => (
-          <Card key={centre.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-green-600" />
-                    {centre.centreName}
-                  </CardTitle>
-                  <CardDescription>Centre No: {centre.centreNumber}</CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(centre)}>
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleDelete(centre.id)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <p><strong>Address:</strong> {centre.address}</p>
-                <p><strong>Payment Cycle:</strong> 
-                  <span className="capitalize ml-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                    {centre.paymentCycle}
-                  </span>
-                </p>
-                {centre.contactPerson && (
-                  <p><strong>Contact:</strong> {centre.contactPerson}</p>
-                )}
-                {centre.phoneNumber && (
-                  <p><strong>Phone:</strong> {centre.phoneNumber}</p>
-                )}
-                <p className="text-gray-500"><strong>Created:</strong> {centre.createdAt}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {centres.length === 0 && !showForm && (
         <Card>
-          <CardContent className="text-center py-8">
-            <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No centres added yet</h3>
-            <p className="text-gray-500 mb-4">Start by adding your first dairy centre</p>
-            <Button onClick={() => setShowForm(true)} className="bg-green-600 hover:bg-green-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your First Centre
-            </Button>
+          <CardHeader>
+            <CardTitle>{language === "english" ? "Centre List" : "केंद्र यादी"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{language === "english" ? "Number" : "क्रमांक"}</TableHead>
+                  <TableHead>{language === "english" ? "Name" : "नाव"}</TableHead>
+                  <TableHead>{language === "english" ? "Cycle" : "सायकल"}</TableHead>
+                  <TableHead>{language === "english" ? "Actions" : "क्रिया"}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {centres.map((centre) => (
+                  <TableRow key={centre.id}>
+                    <TableCell>{centre.number}</TableCell>
+                    <TableCell>
+                      {language === "english" ? centre.name : centre.nameMarathi}
+                    </TableCell>
+                    <TableCell>
+                      {language === "english" 
+                        ? centre.paymentCycle.charAt(0).toUpperCase() + centre.paymentCycle.slice(1)
+                        : centre.paymentCycle === "weekly" ? "साप्ताहिक" 
+                        : centre.paymentCycle === "bi-weekly" ? "पाक्षिक" 
+                        : "मासिक"
+                      }
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(centre)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(centre.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
-      )}
+      </div>
     </div>
   );
 };
