@@ -217,7 +217,7 @@ const SystemSection = () => {
             </div>
           </div>
         </CardContent>
-      </div>
+      </Card>
     </div>
   );
 };
