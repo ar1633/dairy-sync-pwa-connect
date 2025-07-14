@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Users, Truck, Package, Receipt } from "lucide-react";
 
 interface TransactionFormsProps {
+  transactionType: string;
   language: 'en' | 'mr';
 }
 
