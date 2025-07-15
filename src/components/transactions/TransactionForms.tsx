@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,12 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Users, Truck, Package, Receipt } from "lucide-react";
 
 interface TransactionFormsProps {
-  transactionType: string;
+  transactionType?: string;
   language: 'en' | 'mr';
 }
 
-const TransactionForms = ({ language }: TransactionFormsProps) => {
-  const [activeForm, setActiveForm] = useState<string>('milk-collection');
+const TransactionForms = ({ language, transactionType }: TransactionFormsProps) => {
+  const [activeForm, setActiveForm] = useState<string>(transactionType || 'milk-collection');
   
   const translations = {
     en: {
