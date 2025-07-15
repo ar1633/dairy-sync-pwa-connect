@@ -1,4 +1,3 @@
-
 // PWA utilities for enhanced functionality
 export class PWAUtils {
   
@@ -145,8 +144,8 @@ export class PWAUtils {
   }
 }
 
-// Initialize PWA features
-export const initializePWA = async (): Promise<void> => {
+// Initialize PWA features - export the function that's being imported
+export const initialize = async (): Promise<void> => {
   await PWAUtils.registerServiceWorker();
   await PWAUtils.requestNotificationPermission();
   PWAUtils.setupNetworkMonitoring();
@@ -159,3 +158,6 @@ export const initializePWA = async (): Promise<void> => {
   
   console.log('PWA features initialized');
 };
+
+// Keep the old export for backward compatibility
+export { initialize as initializePWA };

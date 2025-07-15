@@ -6,8 +6,8 @@ import './index.css'
 // Initialize PWA features conditionally
 const initializePWA = async () => {
   try {
-    const { PWAUtils } = await import('./utils/pwa');
-    await PWAUtils.initialize();
+    const { initializePWA } = await import('./utils/pwa');
+    await initializePWA();
     console.log('PWA initialized successfully');
   } catch (error) {
     console.error('PWA initialization failed:', error);
