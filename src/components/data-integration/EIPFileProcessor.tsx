@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +22,7 @@ const EIPFileProcessor = () => {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       try {
-        await processFile(file);
+        await USBFileProcessor.processUploadedFile(file);
         newProcessedFiles.push(file.name);
       } catch (error) {
         console.error(`Error processing ${file.name}:`, error);
@@ -36,26 +35,6 @@ const EIPFileProcessor = () => {
     // Update stats
     const dbStats = await DataService.getDatabaseStats();
     setStats(dbStats);
-  };
-
-  const processFile = async (file: File): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const content = e.target?.result as string;
-          // Process the EIP file content using our parser
-          const { EIPParser } = await import('@/utils/eipParser');
-          const records = EIPParser.parseEIPData(content);
-          await EIPParser.storeRecords(records);
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsText(file);
-    });
   };
 
   const handleUSBDetection = async () => {

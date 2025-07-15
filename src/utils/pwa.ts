@@ -56,11 +56,16 @@ export class PWAUtils {
   
   // Setup background sync for offline data
   static async setupBackgroundSync(): Promise<void> {
-    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+    if ('serviceWorker' in navigator) {
       try {
         const registration = await navigator.serviceWorker.ready;
-        await registration.sync.register('background-sync');
-        console.log('Background sync registered');
+        // Check if sync is supported before using it
+        if ('sync' in (registration as any)) {
+          await (registration as any).sync.register('background-sync');
+          console.log('Background sync registered');
+        } else {
+          console.log('Background sync not supported');
+        }
       } catch (error) {
         console.error('Background sync registration failed:', error);
       }
