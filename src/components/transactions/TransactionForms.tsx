@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Calendar, Clock, Users, Truck, Package, Receipt } from "lucide-react";
 
 interface TransactionFormsProps {
@@ -15,6 +16,9 @@ interface TransactionFormsProps {
 
 const TransactionForms = ({ language, transactionType }: TransactionFormsProps) => {
   const [activeForm, setActiveForm] = useState<string>(transactionType || 'milk-collection');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [paymentDate, setPaymentDate] = useState<Date>();
+  const [paidDate, setPaidDate] = useState<Date>();
   
   const translations = {
     en: {
@@ -43,7 +47,10 @@ const TransactionForms = ({ language, transactionType }: TransactionFormsProps) 
       statement: 'Statement',
       customerWise: 'Customer Wise',
       paidDatewise: 'Paid Datewise',
-      close: 'Close'
+      close: 'Close',
+      selectDate: 'Select Date',
+      selectPaidDate: 'Select Paid Date',
+      selectPaymentDate: 'Select Payment Date'
     },
     mr: {
       milkCollection: 'दूध संकलन',
@@ -71,27 +78,30 @@ const TransactionForms = ({ language, transactionType }: TransactionFormsProps) 
       statement: 'स्टेटमेंट',
       customerWise: 'ग्राहक प्रमाणे',
       paidDatewise: 'पेड तारीखवार',
-      close: 'बंद'
+      close: 'बंद',
+      selectDate: 'दिनांक निवडा',
+      selectPaidDate: 'पेड दिनांक निवडा',
+      selectPaymentDate: 'पेमेंट दिनांक निवडा'
     }
   };
 
   const t = translations[language];
 
   const MilkCollectionForm = () => (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
+          <Users className="h-5 w-5 text-primary" />
           {t.milkCollection}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div>
-            <Label>{t.center}</Label>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="80" />
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">{t.center}</Label>
+            <Select defaultValue="80">
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Center" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="80">80 - शिराखेड</SelectItem>
@@ -99,14 +109,21 @@ const TransactionForms = ({ language, transactionType }: TransactionFormsProps) 
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>{t.date}</Label>
-            <Input type="date" defaultValue="2025-07-12" />
+          
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">{t.date}</Label>
+            <DatePicker 
+              date={selectedDate}
+              onDateChange={setSelectedDate}
+              placeholder={t.selectDate}
+              className="w-full"
+            />
           </div>
-          <div>
-            <Label>{t.time}</Label>
+          
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">{t.time}</Label>
             <Select defaultValue="morning">
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -115,136 +132,176 @@ const TransactionForms = ({ language, transactionType }: TransactionFormsProps) 
               </SelectContent>
             </Select>
           </div>
+          
           <div className="flex items-end gap-2">
-            <Button variant="outline">{t.manual}</Button>
-            <Button>{t.auto}</Button>
-            <Button variant="outline">{t.reset}</Button>
-            <Button variant="outline">{t.no}</Button>
+            <Button variant="outline" size="sm">{t.manual}</Button>
+            <Button size="sm">{t.auto}</Button>
+            <Button variant="outline" size="sm">{t.reset}</Button>
+            <Button variant="outline" size="sm">{t.no}</Button>
           </div>
         </div>
 
-        <div className="border rounded-lg p-4 bg-blue-50">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <Label>दिनांक</Label>
-              <Input placeholder="१२-०७-२०२५" className="text-center" />
+        <div className="border rounded-lg p-4 bg-muted/30">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">दिनांक</Label>
+              <Input 
+                placeholder="१२-०७-२०२५" 
+                className="text-center bg-background"
+                readOnly
+              />
             </div>
-            <div>
-              <Label>केंद्र</Label>
-              <div className="flex gap-2">
-                <Input placeholder="0" className="w-16" />
-                <span className="self-center">ते</span>
-                <Input placeholder="0" className="w-16" />
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">केंद्र</Label>
+              <div className="flex gap-2 items-center">
+                <Input placeholder="0" className="w-16 text-center bg-background" />
+                <span className="text-sm text-muted-foreground">ते</span>
+                <Input placeholder="0" className="w-16 text-center bg-background" />
               </div>
             </div>
-            <div>
-              <Label>बॅलेंस</Label>
-              <Input placeholder="0.00" className="text-center" />
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">बॅलेंस</Label>
+              <Input 
+                placeholder="0.00" 
+                className="text-center bg-background font-mono"
+              />
             </div>
           </div>
         </div>
 
-        <div className="mt-4 flex gap-2">
-          <Button className="bg-green-600 hover:bg-green-700">Save Entry</Button>
-          <Button variant="outline">Print Receipt</Button>
-          <Button variant="outline">View Report</Button>
+        <div className="flex flex-wrap gap-2 pt-4">
+          <Button className="bg-green-600 hover:bg-green-700">
+            Save Entry
+          </Button>
+          <Button variant="outline">
+            Print Receipt
+          </Button>
+          <Button variant="outline">
+            View Report
+          </Button>
         </div>
       </CardContent>
     </Card>
   );
 
   const PaymentAdjustForm = () => (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Receipt className="h-5 w-5" />
+          <Receipt className="h-5 w-5 text-primary" />
           PAYMENT ADJUST
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>दिनांक</Label>
-              <Input placeholder="• •" />
-            </div>
-            <div>
-              <Label></Label>
-              <Input placeholder="• •" />
-            </div>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">दिनांक</Label>
+            <DatePicker 
+              date={paymentDate}
+              onDateChange={setPaymentDate}
+              placeholder={t.selectPaymentDate}
+              className="w-full"
+            />
           </div>
-          
-          <div className="flex gap-4 justify-center">
-            <Button>{t.yes}</Button>
-            <Button variant="outline">{t.no}</Button>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Amount</Label>
+            <Input placeholder="0.00" className="font-mono" />
           </div>
+        </div>
+        
+        <div className="flex gap-4 justify-center pt-4">
+          <Button className="px-8">{t.yes}</Button>
+          <Button variant="outline" className="px-8">{t.no}</Button>
         </div>
       </CardContent>
     </Card>
   );
 
   const PaidPaymentForm = () => (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>PAID PAYMENT</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="flex gap-2 mb-4">
-          <Button variant="outline">{t.entry}</Button>
-          <Button variant="outline">Stmt</Button>
-          <Button variant="outline">Cust Wise</Button>
-          <Button variant="outline">Paid Datewise</Button>
-          <Button variant="outline">{t.close}</Button>
+      <CardContent className="space-y-6">
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm">{t.entry}</Button>
+          <Button variant="outline" size="sm">Stmt</Button>
+          <Button variant="outline" size="sm">Cust Wise</Button>
+          <Button variant="outline" size="sm">Paid Datewise</Button>
+          <Button variant="outline" size="sm">{t.close}</Button>
         </div>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <Label>केंद्र नं</Label>
-              <Input placeholder="0" className="w-20" />
-              <span>ते</span>
-              <Input placeholder="0" className="w-20" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">केंद्र नं</Label>
+              <div className="flex items-center gap-2">
+                <Input placeholder="0" className="w-20 text-center" />
+                <span className="text-sm text-muted-foreground">ते</span>
+                <Input placeholder="0" className="w-20 text-center" />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Label>उत्पादक नं.</Label>
-              <Input placeholder="0" className="w-20" />
-              <span>ते</span>
-              <Input placeholder="0" className="w-20" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>दिनांक</Label>
-              <Input placeholder="• •" />
-            </div>
-            <div>
-              <Label>ते</Label>
-              <Input placeholder="• •" />
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">उत्पादक नं.</Label>
+              <div className="flex items-center gap-2">
+                <Input placeholder="0" className="w-20 text-center" />
+                <span className="text-sm text-muted-foreground">ते</span>
+                <Input placeholder="0" className="w-20 text-center" />
+              </div>
             </div>
           </div>
 
-          <div>
-            <Label>पेड दिनांक</Label>
-            <Input placeholder="• •" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">दिनांक</Label>
+              <DatePicker 
+                date={selectedDate}
+                onDateChange={setSelectedDate}
+                placeholder={t.selectDate}
+                className="w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">ते</Label>
+              <DatePicker 
+                date={undefined}
+                onDateChange={() => {}}
+                placeholder={t.selectDate}
+                className="w-full"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">पेड दिनांक</Label>
+            <DatePicker 
+              date={paidDate}
+              onDateChange={setPaidDate}
+              placeholder={t.selectPaidDate}
+              className="w-full max-w-sm"
+            />
           </div>
         </div>
 
-        <div className="mt-4 flex gap-2">
-          <Button className="bg-blue-600 hover:bg-blue-700">Process Payment</Button>
-          <Button variant="outline">Generate Report</Button>
+        <div className="flex flex-wrap gap-2 pt-4">
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            Process Payment
+          </Button>
+          <Button variant="outline">
+            Generate Report
+          </Button>
         </div>
       </CardContent>
     </Card>
   );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">
+    <div className="container mx-auto p-4 space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold text-foreground">
           {language === 'en' ? 'Transaction Forms' : 'व्यवहार फॉर्म'}
         </h1>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           {language === 'en' 
             ? 'Manage daily dairy transactions and entries' 
             : 'दैनंदिन डेअरी व्यवहार आणि नोंदी व्यवस्थापित करा'
@@ -253,21 +310,27 @@ const TransactionForms = ({ language, transactionType }: TransactionFormsProps) 
       </div>
 
       <Tabs value={activeForm} onValueChange={setActiveForm}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="milk-collection">{t.milkCollection}</TabsTrigger>
-          <TabsTrigger value="payment-adjust">{t.paymentAdjust}</TabsTrigger>
-          <TabsTrigger value="paid-payment">Paid Payment</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsTrigger value="milk-collection" className="text-sm">
+            {t.milkCollection}
+          </TabsTrigger>
+          <TabsTrigger value="payment-adjust" className="text-sm">
+            {t.paymentAdjust}
+          </TabsTrigger>
+          <TabsTrigger value="paid-payment" className="text-sm">
+            Paid Payment
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="milk-collection" className="mt-6">
+        <TabsContent value="milk-collection">
           <MilkCollectionForm />
         </TabsContent>
 
-        <TabsContent value="payment-adjust" className="mt-6">
+        <TabsContent value="payment-adjust">
           <PaymentAdjustForm />
         </TabsContent>
 
-        <TabsContent value="paid-payment" className="mt-6">
+        <TabsContent value="paid-payment">
           <PaidPaymentForm />
         </TabsContent>
       </Tabs>

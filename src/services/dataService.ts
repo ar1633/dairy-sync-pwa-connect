@@ -72,7 +72,7 @@ export class DataService {
         endkey: endDate + '\ufff0'
       });
       
-      let records = result.rows.map(row => row.doc as MilkRecord);
+      let records = result.rows.map(row => row.doc as unknown as MilkRecord).filter(doc => doc);
       
       if (centerCode) {
         records = records.filter(record => record.centerCode === centerCode);
@@ -129,10 +129,10 @@ export class DataService {
   static async getFarmers(centerCode?: string): Promise<any[]> {
     try {
       const result = await databases.farmers.allDocs({ include_docs: true });
-      let farmers = result.rows.map(row => row.doc);
+      let farmers = result.rows.map(row => row.doc).filter(doc => doc);
       
       if (centerCode) {
-        farmers = farmers.filter(farmer => farmer.centerCode === centerCode);
+        farmers = farmers.filter(farmer => farmer && (farmer as any).centerCode === centerCode);
       }
       
       return farmers;
@@ -163,7 +163,7 @@ export class DataService {
   static async getCenters(): Promise<any[]> {
     try {
       const result = await databases.centers.allDocs({ include_docs: true });
-      return result.rows.map(row => row.doc);
+      return result.rows.map(row => row.doc).filter(doc => doc);
     } catch (error) {
       console.error('Error getting centers:', error);
       return [];
@@ -195,7 +195,7 @@ export class DataService {
       
       for (const [name, db] of Object.entries(databases)) {
         const result = await db.allDocs({ include_docs: true });
-        data[name] = result.rows.map(row => row.doc);
+        data[name] = result.rows.map(row => row.doc).filter(doc => doc);
       }
       
       return {
@@ -254,10 +254,10 @@ export class DataService {
         stats[name] = {
           doc_count: info.doc_count,
           update_seq: info.update_seq,
-          disk_size: info.disk_size || 0
+          disk_size: (info as any).disk_size || 0
         };
       } catch (error) {
-        stats[name] = { error: error.message };
+        stats[name] = { error: (error as Error).message };
       }
     }
     
