@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,6 +5,7 @@ import { Database, Users, Calendar, HardDrive, FileSpreadsheet, Shield, Settings
 import PermissionManager from "@/components/access-control/PermissionManager";
 import EverestDataImport from "@/components/data-integration/EverestDataImport";
 import { useState } from "react";
+import SystemBackupManager from "@/components/system/SystemBackupManager";
 
 const SystemSection = () => {
   const { user } = useAuth();
@@ -98,7 +98,7 @@ const SystemSection = () => {
   const availableFeatures = systemFeatures.filter(feature => !feature.adminOnly || isAdmin);
 
   const handleFeatureClick = (featureId: string) => {
-    if (featureId === 'permission-management' || featureId === 'everest-integration') {
+    if (['permission-management', 'everest-integration', 'data-backup'].includes(featureId)) {
       setActiveSubSection(featureId);
     } else {
       // Handle other features
@@ -132,6 +132,21 @@ const SystemSection = () => {
           ← Back to System Management
         </Button>
         <EverestDataImport />
+      </div>
+    );
+  }
+
+  if (activeSubSection === 'data-backup') {
+    return (
+      <div className="space-y-4">
+        <Button 
+          variant="outline" 
+          onClick={() => setActiveSubSection(null)}
+          className="mb-4"
+        >
+          ← Back to System Management
+        </Button>
+        <SystemBackupManager />
       </div>
     );
   }

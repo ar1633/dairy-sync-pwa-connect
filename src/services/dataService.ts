@@ -1,8 +1,10 @@
 import PouchDB from 'pouchdb';
 import { EIPParser, MilkRecord, USBFileProcessor } from '@/utils/eipParser';
+import { User } from './authService';
 
 // Configure PouchDB for better performance and LAN sync
 PouchDB.plugin(require('pouchdb-adapter-idb'));
+PouchDB.plugin(require('pouchdb-find'));
 
 // LAN sync configuration
 const LAN_SYNC_CONFIG = {
@@ -47,15 +49,18 @@ const databases = {
   centers: createDatabase('centers'),
   payments: createDatabase('payments'),
   fodder: createDatabase('fodder'),
-  settings: createDatabase('settings')
+  settings: createDatabase('settings'),
+  users: createDatabase('users')
 };
 
 export class DataService {
-  private static syncStatus: { [key: string]: boolean } = {};
+  protected static syncStatus: { [key: string]: boolean } = {};
+  protected static databases = databases;
+  protected static LAN_SYNC_CONFIG = LAN_SYNC_CONFIG;
   
   // Initialize the data service with LAN sync
   static async initialize(): Promise<void> {
-    console.log('Initializing DataService with LAN sync...');
+    console.log('Initializing DataService with enhanced LAN sync...');
     
     // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {
@@ -71,7 +76,46 @@ export class DataService {
     // Setup conflict resolution
     this.setupConflictResolution();
     
-    console.log('DataService initialized successfully with LAN sync');
+    // Setup database indexes
+    await this.setupDatabaseIndexes();
+    
+    console.log('DataService initialized successfully with enhanced LAN sync');
+  }
+
+  // Setup database indexes for better performance
+  private static async setupDatabaseIndexes(): Promise<void> {
+    try {
+      // Create indexes for milk data
+      await databases.milkData.local.createIndex({
+        index: { fields: ['date', 'centerCode', 'farmerCode'] }
+      });
+      
+      await databases.milkData.local.createIndex({
+        index: { fields: ['employeeId', 'timestamp'] }
+      });
+
+      // Create indexes for farmers
+      await databases.farmers.local.createIndex({
+        index: { fields: ['centerCode'] }
+      });
+
+      // Create indexes for users
+      await databases.users.local.createIndex({
+        index: { fields: ['username'] }
+      });
+      
+      await databases.users.local.createIndex({
+        index: { fields: ['email'] }
+      });
+      
+      await databases.users.local.createIndex({
+        index: { fields: ['role'] }
+      });
+
+      console.log('Database indexes created successfully');
+    } catch (error) {
+      console.error('Error creating database indexes:', error);
+    }
   }
   
   // Setup LAN synchronization
@@ -199,13 +243,6 @@ export class DataService {
     return localStorage.getItem('currentEmployeeId') || 'employee_unknown';
   }
   
-  // Broadcast changes to other components/devices
-  private static broadcastChange(database: string, action: string, data: any): void {
-    window.dispatchEvent(new CustomEvent('dataChange', {
-      detail: { database, action, data, timestamp: new Date() }
-    }));
-  }
-  
   // Get milk data for dashboard with real-time updates
   static async getMilkSummary(date: string, centerCode?: string) {
     try {
@@ -290,6 +327,75 @@ export class DataService {
       return [];
     }
   }
+
+  // User Management Methods
+  static async saveUser(user: User): Promise<string> {
+    try {
+      const result = await databases.users.local.put(user);
+      console.log('User saved and syncing:', result.id);
+      
+      // Broadcast change to other components
+      this.broadcastChange('users', 'upsert', user);
+      
+      return result.id;
+    } catch (error) {
+      console.error('Error saving user:', error);
+      throw error;
+    }
+  }
+
+  static async getUserById(userId: string): Promise<User | null> {
+    try {
+      const result = await databases.users.local.get(userId);
+      return result as User;
+    } catch (error) {
+      if ((error as any).status === 404) {
+        return null;
+      }
+      console.error('Error getting user by ID:', error);
+      throw error;
+    }
+  }
+
+  static async getUserByUsername(username: string): Promise<User | null> {
+    try {
+      const result = await databases.users.local.find({
+        selector: { username: username },
+        limit: 1
+      });
+      
+      return result.docs.length > 0 ? result.docs[0] as User : null;
+    } catch (error) {
+      console.error('Error getting user by username:', error);
+      return null;
+    }
+  }
+
+  static async getUserByEmail(email: string): Promise<User | null> {
+    try {
+      const result = await databases.users.local.find({
+        selector: { email: email },
+        limit: 1
+      });
+      
+      return result.docs.length > 0 ? result.docs[0] as User : null;
+    } catch (error) {
+      console.error('Error getting user by email:', error);
+      return null;
+    }
+  }
+
+  static async getAllUsers(): Promise<User[]> {
+    try {
+      const result = await databases.users.local.allDocs({ include_docs: true });
+      return result.rows
+        .map(row => row.doc)
+        .filter(doc => doc && doc._id.startsWith('user_')) as User[];
+    } catch (error) {
+      console.error('Error getting all users:', error);
+      return [];
+    }
+  }
   
   // Get sync status for all databases
   static getSyncStatus(): { [key: string]: boolean } {
@@ -363,20 +469,30 @@ export class DataService {
     }
   }
   
-  // Export data for backup
+  // Enhanced export with user data
   static async exportData(): Promise<any> {
     try {
       const data: any = {};
       
       for (const [name, db] of Object.entries(databases)) {
         const result = await db.local.allDocs({ include_docs: true });
-        data[name] = result.rows.map(row => row.doc).filter(doc => doc);
+        let docs = result.rows.map(row => row.doc).filter(doc => doc);
+        
+        // Remove passwords from user data for security
+        if (name === 'users') {
+          docs = docs.map((user: any) => {
+            const { password, ...userWithoutPassword } = user;
+            return userWithoutPassword;
+          });
+        }
+        
+        data[name] = docs;
       }
       
       return {
         timestamp: new Date(),
         data,
-        version: '1.0'
+        version: '2.0'
       };
     } catch (error) {
       console.error('Error exporting data:', error);
@@ -384,7 +500,7 @@ export class DataService {
     }
   }
   
-  // Import data from backup
+  // Enhanced import with user data
   static async importData(backupData: any): Promise<void> {
     try {
       for (const [dbName, records] of Object.entries(backupData.data)) {
@@ -393,7 +509,17 @@ export class DataService {
           
           for (const record of records as any[]) {
             try {
-              await db.put(record);
+              // For users, generate new IDs to avoid conflicts
+              if (dbName === 'users') {
+                const newRecord = {
+                  ...record,
+                  _id: `user_imported_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                  importedAt: new Date()
+                };
+                await db.put(newRecord);
+              } else {
+                await db.put(record);
+              }
             } catch (error) {
               console.error(`Error importing record to ${dbName}:`, error);
             }
@@ -407,8 +533,24 @@ export class DataService {
       throw error;
     }
   }
+
+  // Get user activity logs
+  static async getUserActivityLogs(userId: string, limit: number = 50): Promise<any[]> {
+    try {
+      const result = await databases.milkData.local.find({
+        selector: { employeeId: userId },
+        sort: [{ timestamp: 'desc' }],
+        limit: limit
+      });
+      
+      return result.docs;
+    } catch (error) {
+      console.error('Error getting user activity logs:', error);
+      return [];
+    }
+  }
   
-  // Get database statistics
+  // Enhanced system statistics
   static async getDatabaseStats(): Promise<any> {
     const stats: any = {};
     
@@ -424,6 +566,16 @@ export class DataService {
         stats[name] = { error: (error as Error).message };
       }
     }
+
+    // Add user statistics
+    try {
+      const users = await this.getAllUsers();
+      stats.users.active = users.filter(u => u.isActive).length;
+      stats.users.admins = users.filter(u => u.role === 'admin').length;
+      stats.users.employees = users.filter(u => u.role === 'employee').length;
+    } catch (error) {
+      console.error('Error getting user stats:', error);
+    }
     
     return stats;
   }
@@ -431,5 +583,19 @@ export class DataService {
   // Process EIP files from USB
   static async processEIPFiles(): Promise<void> {
     await USBFileProcessor.detectAndProcessEIPFiles();
+  }
+
+  // Broadcast method to include user changes
+  protected static broadcastChange(database: string, action: string, data: any): void {
+    window.dispatchEvent(new CustomEvent('dataChange', {
+      detail: { database, action, data, timestamp: new Date() }
+    }));
+    
+    // Additional broadcasting for user-related changes
+    if (database === 'users') {
+      window.dispatchEvent(new CustomEvent('userChange', {
+        detail: { action, data, timestamp: new Date() }
+      }));
+    }
   }
 }

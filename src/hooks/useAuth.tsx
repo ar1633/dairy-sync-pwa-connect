@@ -1,20 +1,17 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { toast } from "@/hooks/use-toast";
-
-interface User {
-  id: string;
-  username: string;
-  role: 'admin' | 'employee';
-  name: string;
-  isActive: boolean;
-}
+import { AuthService, User, LoginCredentials, RegisterData } from "@/services/authService";
+import { BackupService } from "@/services/backupService";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (credentials: LoginCredentials) => Promise<boolean>;
+  register: (userData: RegisterData) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
+  updateUser: (userData: Partial<User>) => Promise<boolean>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,56 +31,53 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const authService = AuthService.getInstance();
+  const backupService = BackupService.getInstance();
 
   useEffect(() => {
     // Check for stored auth data
-    const storedUser = localStorage.getItem('dairy_user');
+    const storedUser = authService.getCurrentUser();
     if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-      } catch (error) {
-        localStorage.removeItem('dairy_user');
-      }
+      setUser(storedUser);
+      // Start automatic backup for logged in users
+      backupService.startAutomaticBackup();
     }
     setLoading(false);
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
+  const login = async (credentials: LoginCredentials): Promise<boolean> => {
     setLoading(true);
     
-    // Simulate API call - In real app, this would be actual authentication
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Default users for demo
-    const users = [
-      { id: '1', username: 'admin', password: 'admin123', role: 'admin' as const, name: 'Admin User', isActive: true },
-      { id: '2', username: 'employee1', password: 'emp123', role: 'employee' as const, name: 'Employee One', isActive: true },
-    ];
-    
-    const foundUser = users.find(u => u.username === username && u.password === password);
-    
-    if (foundUser && foundUser.isActive) {
-      const userData = {
-        id: foundUser.id,
-        username: foundUser.username,
-        role: foundUser.role,
-        name: foundUser.name,
-        isActive: foundUser.isActive
-      };
+    try {
+      const result = await authService.loginUser(credentials);
       
-      setUser(userData);
-      localStorage.setItem('dairy_user', JSON.stringify(userData));
-      toast({
-        title: "Login Successful",
-        description: `Welcome back, ${foundUser.name}!`,
-      });
-      setLoading(false);
-      return true;
-    } else {
+      if (result.success && result.user) {
+        setUser(result.user);
+        
+        // Start automatic backup
+        backupService.startAutomaticBackup();
+        
+        toast({
+          title: "Login Successful",
+          description: `Welcome back, ${result.user.name}!`,
+        });
+        
+        setLoading(false);
+        return true;
+      } else {
+        toast({
+          title: "Login Failed",
+          description: result.message,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return false;
+      }
+    } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: "Login Failed",
-        description: "Invalid credentials or account inactive",
+        description: "An unexpected error occurred",
         variant: "destructive",
       });
       setLoading(false);
@@ -91,17 +85,102 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const register = async (userData: RegisterData): Promise<{ success: boolean; message: string }> => {
+    try {
+      const result = await authService.registerUser(userData);
+      
+      if (result.success) {
+        toast({
+          title: "Registration Successful",
+          description: result.message,
+        });
+      } else {
+        toast({
+          title: "Registration Failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Registration error:', error);
+      const errorMessage = "Registration failed. Please try again.";
+      toast({
+        title: "Registration Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return { success: false, message: errorMessage };
+    }
+  };
+
   const logout = () => {
+    // Stop automatic backup
+    backupService.stopAutomaticBackup();
+    
+    // Clear user state
     setUser(null);
-    localStorage.removeItem('dairy_user');
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
+    
+    // Clear from service
+    authService.logout();
+  };
+
+  const updateUser = async (userData: Partial<User>): Promise<boolean> => {
+    if (!user) return false;
+    
+    try {
+      const updatedUser = { ...user, ...userData };
+      setUser(updatedUser);
+      
+      // Update in localStorage
+      localStorage.setItem('dairy_user', JSON.stringify(updatedUser));
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      return false;
+    }
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
+    if (!user) {
+      return { success: false, message: 'User not logged in' };
+    }
+    
+    try {
+      const result = await authService.changePassword(user._id, currentPassword, newPassword);
+      
+      if (result.success) {
+        toast({
+          title: "Password Changed",
+          description: result.message,
+        });
+      } else {
+        toast({
+          title: "Password Change Failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error changing password:', error);
+      return { success: false, message: 'Failed to change password' };
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      login, 
+      register, 
+      logout, 
+      updateUser, 
+      changePassword 
+    }}>
       {children}
     </AuthContext.Provider>
   );
