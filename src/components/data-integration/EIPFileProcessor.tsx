@@ -3,9 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, FileText, Database, CheckCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Upload, FileText, Database, CheckCircle, Usb } from 'lucide-react';
 import { DataService } from '@/services/dataService';
 import { USBFileProcessor } from '@/utils/eipParser';
+import USBMonitor from './USBMonitor';
 
 const EIPFileProcessor = () => {
   const [processing, setProcessing] = useState(false);
@@ -51,72 +53,85 @@ const EIPFileProcessor = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            EIP File Processor
-          </CardTitle>
-          <CardDescription>
-            Import milk collection data from EIP files (Ekomilk format)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="eip-files">Upload EIP Files</Label>
-              <Input
-                id="eip-files"
-                type="file"
-                multiple
-                accept=".eip,.txt"
-                onChange={handleFileUpload}
-                disabled={processing}
-              />
-              <p className="text-sm text-gray-500">
-                Select multiple .eip files from your pendrive
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>USB Auto-Detection</Label>
-              <Button 
-                onClick={handleUSBDetection}
-                disabled={processing}
-                className="w-full"
-                variant="outline"
-              >
-                <Database className="h-4 w-4 mr-2" />
-                Detect & Process USB Files
-              </Button>
-              <p className="text-sm text-gray-500">
-                Automatically detect and process EIP files from USB drive
-              </p>
-            </div>
-          </div>
-
-          {processing && (
-            <div className="flex items-center gap-2 text-blue-600">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-              Processing files...
-            </div>
-          )}
-
-          {processedFiles.length > 0 && (
-            <div className="space-y-2">
-              <Label>Recently Processed Files</Label>
-              <div className="space-y-1">
-                {processedFiles.map((fileName, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span>{fileName}</span>
-                  </div>
-                ))}
+      <Tabs defaultValue="manual" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="manual">Manual Processing</TabsTrigger>
+          <TabsTrigger value="auto">Auto USB Monitor</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="manual" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="h-5 w-5" />
+                EIP File Processor
+              </CardTitle>
+              <CardDescription>
+                Import milk collection data from EIP files (Ekomilk format)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="eip-files">Upload EIP Files</Label>
+                  <Input
+                    id="eip-files"
+                    type="file"
+                    multiple
+                    accept=".eip,.txt"
+                    onChange={handleFileUpload}
+                    disabled={processing}
+                  />
+                  <p className="text-sm text-gray-500">
+                    Select multiple .eip files from your pendrive
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>USB Auto-Detection</Label>
+                  <Button 
+                    onClick={handleUSBDetection}
+                    disabled={processing}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Database className="h-4 w-4 mr-2" />
+                    Detect & Process USB Files
+                  </Button>
+                  <p className="text-sm text-gray-500">
+                    Automatically detect and process EIP files from USB drive
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+              {processing && (
+                <div className="flex items-center gap-2 text-blue-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  Processing files...
+                </div>
+              )}
+
+              {processedFiles.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Recently Processed Files</Label>
+                  <div className="space-y-1">
+                    {processedFiles.map((fileName, index) => (
+                      <div key={index} className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span>{fileName}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="auto">
+          <USBMonitor />
+        </TabsContent>
+      </Tabs>
 
       {stats && (
         <Card>

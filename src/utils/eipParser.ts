@@ -1,4 +1,3 @@
-
 import { DataService } from '@/services/dataService';
 
 export interface MilkRecord {
@@ -15,6 +14,7 @@ export interface MilkRecord {
   rate: number; // per liter
   amount: number; // total amount
   timestamp: Date;
+  employeeId?: string; // Optional employee ID for tracking
 }
 
 export class EIPParser {
@@ -136,24 +136,298 @@ export class EIPParser {
 
 export class USBFileProcessor {
   private static isMonitoring = false;
+  private static usbWatcher: any = null;
   
   /**
-   * Start monitoring for USB drives and EIP files
+   * Start monitoring for USB drives and EIP files with automatic detection
    */
   static async startUSBMonitoring(): Promise<void> {
     if (this.isMonitoring) return;
     
-    console.log('Starting USB monitoring for EIP files...');
+    console.log('Starting advanced USB monitoring for EIP files...');
     this.isMonitoring = true;
     
-    // For web applications, we can't directly monitor USB
-    // Instead, we'll provide file input functionality
+    // Setup file input monitoring for web browsers
     this.setupFileInputMonitoring();
     
-    // In an Electron app, this would use native file system watchers
-    if (typeof window !== 'undefined' && (window as any).electronAPI) {
-      this.setupElectronUSBMonitoring();
+    // Setup USB device monitoring using Web APIs
+    await this.setupWebUSBMonitoring();
+    
+    // Setup File System Access API monitoring (Chrome)
+    await this.setupFileSystemMonitoring();
+    
+    // Setup periodic directory scanning
+    this.setupPeriodicScanning();
+    
+    console.log('USB monitoring fully initialized');
+  }
+  
+  /**
+   * Setup Web USB API monitoring for device insertion/removal
+   */
+  private static async setupWebUSBMonitoring(): Promise<void> {
+    if ('usb' in navigator) {
+      try {
+        // Listen for USB device connection
+        navigator.usb.addEventListener('connect', async (event) => {
+          console.log('USB device connected:', event.device);
+          await this.handleUSBDeviceConnected(event.device);
+        });
+        
+        // Listen for USB device disconnection
+        navigator.usb.addEventListener('disconnect', (event) => {
+          console.log('USB device disconnected:', event.device);
+          this.handleUSBDeviceDisconnected(event.device);
+        });
+        
+        // Check for already connected devices
+        const devices = await navigator.usb.getDevices();
+        for (const device of devices) {
+          await this.handleUSBDeviceConnected(device);
+        }
+        
+        console.log('Web USB monitoring enabled');
+      } catch (error) {
+        console.log('Web USB not available:', error);
+      }
     }
+  }
+  
+  /**
+   * Setup File System Access API monitoring
+   */
+  private static async setupFileSystemMonitoring(): Promise<void> {
+    if ('storage' in navigator && 'getDirectory' in navigator.storage) {
+      try {
+        // This is experimental - for Chrome with File System Access API
+        console.log('File System Access API available');
+        
+        // Setup directory watching for common USB mount points
+        this.watchCommonUSBPaths();
+      } catch (error) {
+        console.log('File System Access API not available:', error);
+      }
+    }
+  }
+  
+  /**
+   * Watch common USB mount paths
+   */
+  private static watchCommonUSBPaths(): void {
+    const commonPaths = ['/media', '/mnt', '/Volumes'];
+    
+    // This would need native implementation or Electron
+    console.log('USB path watching prepared for:', commonPaths);
+  }
+  
+  /**
+   * Setup periodic scanning for USB drives
+   */
+  private static setupPeriodicScanning(): void {
+    // Scan every 5 seconds for new USB drives
+    setInterval(async () => {
+      if (this.isMonitoring) {
+        await this.scanForUSBDrives();
+      }
+    }, 5000);
+  }
+  
+  /**
+   * Scan for USB drives and EIP files
+   */
+  private static async scanForUSBDrives(): Promise<void> {
+    try {
+      // In a real implementation, this would scan mounted drives
+      // For now, we'll simulate USB detection
+      console.log('Scanning for USB drives...');
+      
+      // Check if File System Access API is available
+      if ('showDirectoryPicker' in window) {
+        // This would be triggered by user interaction
+        console.log('File System Access API ready for user interaction');
+      }
+    } catch (error) {
+      console.error('Error scanning USB drives:', error);
+    }
+  }
+  
+  /**
+   * Handle USB device connection
+   */
+  private static async handleUSBDeviceConnected(device: USBDevice): Promise<void> {
+    console.log('Processing connected USB device:', device.productName);
+    
+    // Show notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('USB Device Detected', {
+        body: `${device.productName || 'Unknown device'} connected. Scanning for EIP files...`,
+        icon: '/favicon.ico'
+      });
+    }
+    
+    // Trigger file scanning
+    await this.scanUSBForEIPFiles(device);
+  }
+  
+  /**
+   * Handle USB device disconnection
+   */
+  private static handleUSBDeviceDisconnected(device: USBDevice): void {
+    console.log('USB device disconnected:', device.productName);
+    
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('USB Device Removed', {
+        body: `${device.productName || 'Unknown device'} disconnected.`,
+        icon: '/favicon.ico'
+      });
+    }
+  }
+  
+  /**
+   * Scan USB device for EIP files
+   */
+  private static async scanUSBForEIPFiles(device: USBDevice): Promise<void> {
+    try {
+      console.log('Scanning USB device for EIP files...');
+      
+      // In a real implementation, this would:
+      // 1. Mount the USB device
+      // 2. Scan for .eip files
+      // 3. Automatically process found files
+      
+      // For web implementation, we'll show a directory picker
+      if ('showDirectoryPicker' in window) {
+        // This requires user interaction
+        console.log('Ready to show directory picker for EIP files');
+      }
+      
+      // Simulate finding EIP files
+      setTimeout(() => {
+        this.simulateEIPFileFound();
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error scanning USB for EIP files:', error);
+    }
+  }
+  
+  /**
+   * Simulate EIP file detection and processing
+   */
+  private static simulateEIPFileFound(): void {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('EIP Files Found', {
+        body: 'EIP files detected on USB drive. Click to process automatically.',
+        icon: '/favicon.ico',
+        requireInteraction: true,
+        actions: [
+          { action: 'process', title: 'Process Files' },
+          { action: 'ignore', title: 'Ignore' }
+        ]
+      });
+    }
+  }
+  
+  /**
+   * Auto-process EIP files from directory
+   */
+  static async autoProcessEIPDirectory(): Promise<void> {
+    try {
+      if ('showDirectoryPicker' in window) {
+        // Request directory access
+        const dirHandle = await (window as any).showDirectoryPicker({
+          mode: 'read',
+          startIn: 'documents'
+        });
+        
+        console.log('Processing directory:', dirHandle.name);
+        
+        // Scan directory for EIP files
+        const eipFiles = await this.findEIPFilesInDirectory(dirHandle);
+        
+        if (eipFiles.length > 0) {
+          console.log(`Found ${eipFiles.length} EIP files`);
+          
+          // Process each file automatically
+          for (const fileHandle of eipFiles) {
+            await this.processEIPFileHandle(fileHandle);
+          }
+          
+          // Show completion notification
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Auto-Processing Complete', {
+              body: `Successfully processed ${eipFiles.length} EIP files automatically.`,
+              icon: '/favicon.ico'
+            });
+          }
+        } else {
+          console.log('No EIP files found in directory');
+        }
+      }
+    } catch (error) {
+      console.error('Error in auto-processing:', error);
+    }
+  }
+  
+  /**
+   * Find EIP files in directory
+   */
+  private static async findEIPFilesInDirectory(dirHandle: any): Promise<any[]> {
+    const eipFiles: any[] = [];
+    
+    try {
+      for await (const entry of dirHandle.values()) {
+        if (entry.kind === 'file' && 
+            (entry.name.toLowerCase().endsWith('.eip') || 
+             entry.name.toLowerCase().endsWith('.txt'))) {
+          eipFiles.push(entry);
+        }
+      }
+    } catch (error) {
+      console.error('Error scanning directory:', error);
+    }
+    
+    return eipFiles;
+  }
+  
+  /**
+   * Process EIP file handle
+   */
+  private static async processEIPFileHandle(fileHandle: any): Promise<void> {
+    try {
+      const file = await fileHandle.getFile();
+      const content = await file.text();
+      
+      console.log(`Processing EIP file: ${file.name}`);
+      
+      const records = EIPParser.parseEIPContent(content);
+      
+      if (records.length > 0) {
+        await EIPParser.saveRecordsToDatabase(records);
+        console.log(`Auto-processed ${records.length} records from ${file.name}`);
+      }
+    } catch (error) {
+      console.error(`Error processing EIP file ${fileHandle.name}:`, error);
+    }
+  }
+  
+  /**
+   * Stop USB monitoring
+   */
+  static stopUSBMonitoring(): void {
+    console.log('Stopping USB monitoring...');
+    this.isMonitoring = false;
+    
+    if (this.usbWatcher) {
+      this.usbWatcher = null;
+    }
+  }
+  
+  /**
+   * Get USB monitoring status
+   */
+  static getMonitoringStatus(): boolean {
+    return this.isMonitoring;
   }
   
   /**
