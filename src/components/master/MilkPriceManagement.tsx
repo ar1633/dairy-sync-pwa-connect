@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Edit, Plus, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { PDFService } from "@/services/pdfService";
 
 type MilkType = "cow" | "buffalo";
 type ShiftTime = "morning" | "evening";
@@ -125,10 +125,24 @@ const MilkPriceManagement = () => {
   };
 
   const downloadPDF = () => {
-    toast({
-      title: language === "english" ? "PDF Download" : "पीडीएफ डाउनलोड",
-      description: language === "english" ? "PDF generation feature coming soon" : "पीडीएफ तयार करण्याचे वैशिष्ट्य लवकरच येत आहे"
-    });
+    try {
+      PDFService.generateMilkPricesPDF(prices, {
+        title: language === "english" ? "Milk Price List" : "दूध दर यादी",
+        orientation: 'landscape',
+        filename: `milk-prices-${new Date().toISOString().split('T')[0]}.pdf`
+      });
+      
+      toast({
+        title: language === "english" ? "PDF Downloaded" : "पीडीएफ डाउनलोड केला",
+        description: language === "english" ? "Milk price list downloaded successfully" : "दूध दर यादी यशस्वीरित्या डाउनलोड केली"
+      });
+    } catch (error) {
+      toast({
+        title: language === "english" ? "Download Failed" : "डाउनलोड अयशस्वी",
+        description: language === "english" ? "Failed to generate PDF" : "पीडीएफ तयार करण्यात अयशस्वी",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
