@@ -19,8 +19,8 @@ const USBMonitor = () => {
     // Check initial monitoring status
     setIsMonitoring(USBFileProcessor.getMonitoringStatus());
     
-    // Setup USB device listeners
-    if ('usb' in navigator) {
+    // Setup USB device listeners if WebUSB is supported
+    if ('usb' in navigator && navigator.usb) {
       const handleConnect = (event: any) => {
         const device = event.device;
         setConnectedDevices(prev => [...prev, device]);
@@ -39,12 +39,13 @@ const USBMonitor = () => {
         });
       };
 
-      navigator.usb.addEventListener('connect', handleConnect);
-      navigator.usb.addEventListener('disconnect', handleDisconnect);
+      const usb = navigator.usb as any;
+      usb.addEventListener('connect', handleConnect);
+      usb.addEventListener('disconnect', handleDisconnect);
 
       return () => {
-        navigator.usb.removeEventListener('connect', handleConnect);
-        navigator.usb.removeEventListener('disconnect', handleDisconnect);
+        usb.removeEventListener('connect', handleConnect);
+        usb.removeEventListener('disconnect', handleDisconnect);
       };
     }
   }, [toast]);
@@ -137,6 +138,22 @@ const USBMonitor = () => {
         </CardContent>
       </Card>
 
+      {!('usb' in navigator) && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+              <div>
+                <p className="font-medium text-yellow-800">WebUSB Not Supported</p>
+                <p className="text-sm text-yellow-700">
+                  Your browser doesn't support WebUSB. Please use Chrome or Edge for automatic USB detection.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -195,32 +212,32 @@ const USBMonitor = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>USB Monitoring Features</CardTitle>
+          <CardTitle>PWA Features & Requirements</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3 text-sm">
             <div className="flex items-start gap-2">
               <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
               <div>
-                <strong>Automatic Detection:</strong> Detects USB drives when connected
+                <strong>Offline Capability:</strong> Works without internet connection
               </div>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
               <div>
-                <strong>EIP File Scanning:</strong> Automatically scans for .eip files
+                <strong>Auto-Install:</strong> Can be installed directly from browser
               </div>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
               <div>
-                <strong>Auto-Processing:</strong> Processes files without user intervention
+                <strong>LAN Sync:</strong> Real-time data sync across devices
               </div>
             </div>
             <div className="flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
               <div>
-                <strong>Browser Limitations:</strong> Some features require user interaction due to browser security
+                <strong>Browser Requirement:</strong> Chrome/Edge needed for USB features
               </div>
             </div>
           </div>

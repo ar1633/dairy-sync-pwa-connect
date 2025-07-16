@@ -1,0 +1,214 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Krishi DairySync - Setup Instructions</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1, h2 { color: #16a34a; }
+    .step {
+      background: #f8f9fa;
+      border-left: 4px solid #16a34a;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    code {
+      background: #e9ecef;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Menlo', monospace;
+    }
+    .warning {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      color: #856404;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+    }
+    .success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🥛 Krishi DairySync - Complete Setup Guide</h1>
+    
+    <div class="success">
+      <strong>✅ One-Click Installation Available!</strong><br>
+      This PWA can be installed directly from your browser - no complex setup required!
+    </div>
+
+    <h2>📱 For Users (Employees) - Easy Installation</h2>
+    
+    <div class="step">
+      <h3>Step 1: Access the App</h3>
+      <p>Open your web browser (Chrome/Edge recommended) and navigate to:</p>
+      <code>http://[YOUR-SERVER-IP]:3000</code>
+      <p>Replace [YOUR-SERVER-IP] with the actual IP address of the server.</p>
+    </div>
+
+    <div class="step">
+      <h3>Step 2: Install as PWA</h3>
+      <p><strong>Chrome/Edge:</strong></p>
+      <ul>
+        <li>Look for the install icon (⊕) in the address bar</li>
+        <li>Click it and select "Install" or</li>
+        <li>Click the three-dot menu → "Install Krishi DairySync"</li>
+      </ul>
+      <p><strong>Safari (iOS):</strong></p>
+      <ul>
+        <li>Tap the share button (□↗)</li>
+        <li>Select "Add to Home Screen"</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <h3>Step 3: Launch the App</h3>
+      <p>After installation, you can launch the app from:</p>
+      <ul>
+        <li>Desktop shortcut (Windows/Mac/Linux)</li>
+        <li>Home screen (Mobile devices)</li>
+        <li>Start menu / Applications folder</li>
+      </ul>
+    </div>
+
+    <h2>🖥️ For System Administrators - Server Setup</h2>
+
+    <div class="step">
+      <h3>Step 1: Install CouchDB (Optional - for LAN sync)</h3>
+      <p><strong>Ubuntu/Debian:</strong></p>
+      <code>
+        sudo apt update<br>
+        sudo apt install couchdb<br>
+        sudo systemctl start couchdb<br>
+        sudo systemctl enable couchdb
+      </code>
+      
+      <p><strong>Windows:</strong></p>
+      <p>Download CouchDB from <a href="https://couchdb.apache.org/" target="_blank">https://couchdb.apache.org/</a></p>
+      
+      <p><strong>Configure CouchDB:</strong></p>
+      <ul>
+        <li>Access CouchDB admin at: <code>http://localhost:5984/_utils</code></li>
+        <li>Create admin user (admin/password)</li>
+        <li>Enable CORS for web access</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <h3>Step 2: Deploy the PWA</h3>
+      <p><strong>Option A: Static File Server (Recommended)</strong></p>
+      <code>
+        # Install a simple HTTP server<br>
+        npm install -g http-server<br>
+        <br>
+        # Serve the built files<br>
+        http-server dist -p 3000 -a 0.0.0.0
+      </code>
+      
+      <p><strong>Option B: Apache/Nginx</strong></p>
+      <p>Copy the built files to your web server's document root.</p>
+    </div>
+
+    <div class="step">
+      <h3>Step 3: Network Configuration</h3>
+      <p>Ensure the following ports are accessible on your LAN:</p>
+      <ul>
+        <li><strong>Port 3000:</strong> PWA application</li>
+        <li><strong>Port 5984:</strong> CouchDB (if used)</li>
+      </ul>
+      
+      <div class="warning">
+        <strong>⚠️ Important:</strong> Configure your firewall to allow these ports within your local network only.
+      </div>
+    </div>
+
+    <h2>✨ Key Features</h2>
+    
+    <div class="step">
+      <h3>🔄 Real-time LAN Synchronization</h3>
+      <ul>
+        <li>All data syncs automatically across devices</li>
+        <li>No internet connection required</li>
+        <li>Conflict resolution for simultaneous edits</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <h3>📱 Progressive Web App Benefits</h3>
+      <ul>
+        <li>Works offline</li>
+        <li>Installs like a native app</li>
+        <li>Push notifications</li>
+        <li>Background sync</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <h3>🔌 USB EIP File Processing</h3>
+      <ul>
+        <li>Automatic USB drive detection</li>
+        <li>Auto-processing of .eip files</li>
+        <li>Real-time data import</li>
+      </ul>
+    </div>
+
+    <h2>🐛 Troubleshooting</h2>
+    
+    <div class="step">
+      <h3>Common Issues</h3>
+      <p><strong>PWA won't install:</strong></p>
+      <ul>
+        <li>Ensure HTTPS or localhost</li>
+        <li>Use Chrome/Edge browser</li>
+        <li>Check if service worker is registered</li>
+      </ul>
+      
+      <p><strong>Sync not working:</strong></p>
+      <ul>
+        <li>Verify CouchDB is running</li>
+        <li>Check firewall settings</li>
+        <li>Ensure all devices are on same network</li>
+      </ul>
+      
+      <p><strong>USB detection not working:</strong></p>
+      <ul>
+        <li>Use Chrome/Edge (WebUSB support required)</li>
+        <li>Allow USB permissions when prompted</li>
+      </ul>
+    </div>
+
+    <div class="success">
+      <strong>🎉 Success!</strong><br>
+      Your employees can now install and use Krishi DairySync as easily as any mobile app, with all the power of a desktop application!
+    </div>
+
+    <p style="text-align: center; margin-top: 30px; color: #666;">
+      <small>Krishi DairySync v2.0 - Comprehensive Dairy Management System</small>
+    </p>
+  </div>
+</body>
+</html>

@@ -3,30 +3,37 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 
-// Initialize PWA features conditionally
-const initializePWA = async () => {
+// Initialize all services
+const initializeApp = async () => {
   try {
-    const { initializePWA } = await import('./utils/pwa');
+    // Initialize PWA features
+    const { initialize: initializePWA } = await import('./utils/pwa');
     await initializePWA();
     console.log('PWA initialized successfully');
-  } catch (error) {
-    console.error('PWA initialization failed:', error);
-  }
-};
 
-// Initialize data service conditionally
-const initializeDataService = async () => {
-  try {
+    // Initialize PWA installer
+    const { PWAInstaller } = await import('./utils/pwaInstaller');
+    PWAInstaller.initialize();
+    console.log('PWA installer initialized');
+
+    // Initialize CouchDB service
+    const { CouchDBService } = await import('./services/couchdbService');
+    const couchdb = CouchDBService.getInstance();
+    await couchdb.initialize();
+    console.log('CouchDB service initialized');
+
+    // Initialize data service
     const { DataService } = await import('./services/dataService');
     await DataService.initialize();
     console.log('Data service initialized successfully');
+
   } catch (error) {
-    console.error('Data service initialization failed:', error);
+    console.error('Service initialization failed:', error);
+    // Continue with app initialization even if services fail
   }
 };
 
 // Initialize services
-initializePWA();
-initializeDataService();
+initializeApp();
 
 createRoot(document.getElementById("root")!).render(<App />);
