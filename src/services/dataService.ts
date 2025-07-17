@@ -1,11 +1,9 @@
-import PouchDB from 'pouchdb';
+import PouchDB from 'pouchdb-browser';
 import PouchDBFind from 'pouchdb-find';
-import PouchDBAdapterIdb from 'pouchdb-adapter-idb';
 import { EIPParser, MilkRecord, USBFileProcessor } from '@/utils/eipParser';
 import { User } from './authService';
 
 // Configure PouchDB with proper plugin imports
-PouchDB.plugin(PouchDBAdapterIdb);
 PouchDB.plugin(PouchDBFind);
 
 // LAN sync configuration
@@ -17,7 +15,7 @@ const LAN_SYNC_CONFIG = {
 
 // Initialize all databases with sync configuration
 const createDatabase = (name: string) => {
-  const localDb = new PouchDB(name, { adapter: 'idb' });
+  const localDb = new PouchDB(name);
   
   // Setup automatic sync with CouchDB server if available
   const remoteDb = new PouchDB(`${LAN_SYNC_CONFIG.serverUrl}/${name}`);

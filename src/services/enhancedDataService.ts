@@ -1,8 +1,11 @@
 
 import { DataService } from './dataService';
 import { User } from './authService';
-import PouchDB from 'pouchdb';
+import PouchDB from 'pouchdb-browser';
 import PouchDBFind from 'pouchdb-find';
+
+// Configure PouchDB with find plugin
+PouchDB.plugin(PouchDBFind);
 
 // Extend DataService with user management capabilities
 export class EnhancedDataService extends DataService {
@@ -94,15 +97,18 @@ export class EnhancedDataService extends DataService {
     }
   }
 
-  // Get user database
+  // Get user database - access the local database instance
   private static getUserDatabase() {
-    return this.databases.users || this.createUserDatabase();
+    const userDbConfig = this.databases.users;
+    if (userDbConfig && typeof userDbConfig === 'object' && 'local' in userDbConfig) {
+      return userDbConfig.local;
+    }
+    return this.createUserDatabase();
   }
 
   // Create user database if it doesn't exist
   private static createUserDatabase() {
-    // Use already configured PouchDB from parent class
-    const userDb = new PouchDB('users', { adapter: 'idb' });
+    const userDb = new PouchDB('users');
     
     // Create indexes for efficient querying
     userDb.createIndex({
@@ -144,7 +150,10 @@ export class EnhancedDataService extends DataService {
   // Get user activity logs
   static async getUserActivityLogs(userId: string, limit: number = 50): Promise<any[]> {
     try {
-      const result = await this.databases.milkData.local.find({
+      const milkDataDb = this.databases.milkData;
+      const db = milkDataDb && typeof milkDataDb === 'object' && 'local' in milkDataDb ? milkDataDb.local : milkDataDb;
+      
+      const result = await db.find({
         selector: { employeeId: userId },
         sort: [{ timestamp: 'desc' }],
         limit: limit
