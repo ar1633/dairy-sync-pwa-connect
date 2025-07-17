@@ -1,3 +1,4 @@
+
 import PouchDB from 'pouchdb';
 import { EIPParser, MilkRecord, USBFileProcessor } from '@/utils/eipParser';
 import { User } from './authService';
@@ -331,7 +332,7 @@ export class DataService {
   // User Management Methods
   static async saveUser(user: User): Promise<string> {
     try {
-      const result = await databases.users.local.put(user);
+      const result = await databases.users.local.put(user as any);
       console.log('User saved and syncing:', result.id);
       
       // Broadcast change to other components
@@ -347,7 +348,7 @@ export class DataService {
   static async getUserById(userId: string): Promise<User | null> {
     try {
       const result = await databases.users.local.get(userId);
-      return result as User;
+      return result as unknown as User;
     } catch (error) {
       if ((error as any).status === 404) {
         return null;
@@ -364,7 +365,7 @@ export class DataService {
         limit: 1
       });
       
-      return result.docs.length > 0 ? result.docs[0] as User : null;
+      return result.docs.length > 0 ? result.docs[0] as unknown as User : null;
     } catch (error) {
       console.error('Error getting user by username:', error);
       return null;
@@ -378,7 +379,7 @@ export class DataService {
         limit: 1
       });
       
-      return result.docs.length > 0 ? result.docs[0] as User : null;
+      return result.docs.length > 0 ? result.docs[0] as unknown as User : null;
     } catch (error) {
       console.error('Error getting user by email:', error);
       return null;
@@ -390,7 +391,7 @@ export class DataService {
       const result = await databases.users.local.allDocs({ include_docs: true });
       return result.rows
         .map(row => row.doc)
-        .filter(doc => doc && doc._id.startsWith('user_')) as User[];
+        .filter(doc => doc && doc._id.startsWith('user_')) as unknown as User[];
     } catch (error) {
       console.error('Error getting all users:', error);
       return [];
@@ -570,9 +571,11 @@ export class DataService {
     // Add user statistics
     try {
       const users = await this.getAllUsers();
-      stats.users.active = users.filter(u => u.isActive).length;
-      stats.users.admins = users.filter(u => u.role === 'admin').length;
-      stats.users.employees = users.filter(u => u.role === 'employee').length;
+      if (stats.users && !stats.users.error) {
+        stats.users.active = users.filter(u => u.isActive).length;
+        stats.users.admins = users.filter(u => u.role === 'admin').length;
+        stats.users.employees = users.filter(u => u.role === 'employee').length;
+      }
     } catch (error) {
       console.error('Error getting user stats:', error);
     }
