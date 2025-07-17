@@ -33,7 +33,8 @@ const initializeApp = async () => {
   }
 };
 
-// Initialize services
-initializeApp();
+// Initialize services in background
+initializeApp().catch(console.error);
 
+// Start the React app immediately
 createRoot(document.getElementById("root")!).render(<App />);

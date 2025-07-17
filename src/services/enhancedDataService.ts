@@ -1,6 +1,8 @@
 
 import { DataService } from './dataService';
 import { User } from './authService';
+import PouchDB from 'pouchdb';
+import PouchDBFind from 'pouchdb-find';
 
 // Extend DataService with user management capabilities
 export class EnhancedDataService extends DataService {
@@ -99,9 +101,7 @@ export class EnhancedDataService extends DataService {
 
   // Create user database if it doesn't exist
   private static createUserDatabase() {
-    const PouchDB = require('pouchdb');
-    PouchDB.plugin(require('pouchdb-find'));
-    
+    // Use already configured PouchDB from parent class
     const userDb = new PouchDB('users', { adapter: 'idb' });
     
     // Create indexes for efficient querying

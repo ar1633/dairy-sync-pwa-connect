@@ -1,11 +1,12 @@
-
 import PouchDB from 'pouchdb';
+import PouchDBFind from 'pouchdb-find';
+import PouchDBAdapterIdb from 'pouchdb-adapter-idb';
 import { EIPParser, MilkRecord, USBFileProcessor } from '@/utils/eipParser';
 import { User } from './authService';
 
-// Configure PouchDB for better performance and LAN sync
-PouchDB.plugin(require('pouchdb-adapter-idb'));
-PouchDB.plugin(require('pouchdb-find'));
+// Configure PouchDB with proper plugin imports
+PouchDB.plugin(PouchDBAdapterIdb);
+PouchDB.plugin(PouchDBFind);
 
 // LAN sync configuration
 const LAN_SYNC_CONFIG = {
