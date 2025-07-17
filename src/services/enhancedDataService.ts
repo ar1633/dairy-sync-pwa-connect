@@ -12,7 +12,7 @@ export class EnhancedDataService extends DataService {
   // User Management Methods
   static async saveUser(user: User): Promise<string> {
     try {
-      const result = await this.getUserDatabase().put(user);
+      const result = await this.getUserDatabase().put(user as any);
       console.log('User saved:', result.id);
       
       // Broadcast change to other components
@@ -28,7 +28,7 @@ export class EnhancedDataService extends DataService {
   static async getUserById(userId: string): Promise<User | null> {
     try {
       const result = await this.getUserDatabase().get(userId);
-      return result as User;
+      return result as unknown as User;
     } catch (error) {
       if ((error as any).status === 404) {
         return null;
@@ -45,7 +45,7 @@ export class EnhancedDataService extends DataService {
         limit: 1
       });
       
-      return result.docs.length > 0 ? result.docs[0] as User : null;
+      return result.docs.length > 0 ? result.docs[0] as unknown as User : null;
     } catch (error) {
       console.error('Error getting user by username:', error);
       return null;
@@ -59,7 +59,7 @@ export class EnhancedDataService extends DataService {
         limit: 1
       });
       
-      return result.docs.length > 0 ? result.docs[0] as User : null;
+      return result.docs.length > 0 ? result.docs[0] as unknown as User : null;
     } catch (error) {
       console.error('Error getting user by email:', error);
       return null;
@@ -71,7 +71,7 @@ export class EnhancedDataService extends DataService {
       const result = await this.getUserDatabase().allDocs({ include_docs: true });
       return result.rows
         .map(row => row.doc)
-        .filter(doc => doc && doc._id.startsWith('user_')) as User[];
+        .filter(doc => doc && doc._id.startsWith('user_')) as unknown as User[];
     } catch (error) {
       console.error('Error getting all users:', error);
       return [];
@@ -85,7 +85,9 @@ export class EnhancedDataService extends DataService {
         return false;
       }
 
-      await this.getUserDatabase().remove(user);
+      // Get the document with revision info for deletion
+      const userDoc = await this.getUserDatabase().get(userId);
+      await this.getUserDatabase().remove(userDoc);
       
       // Broadcast change
       this.broadcastChange('users', 'delete', { _id: userId });
@@ -151,7 +153,15 @@ export class EnhancedDataService extends DataService {
   static async getUserActivityLogs(userId: string, limit: number = 50): Promise<any[]> {
     try {
       const milkDataDb = this.databases.milkData;
-      const db = milkDataDb && typeof milkDataDb === 'object' && 'local' in milkDataDb ? milkDataDb.local : milkDataDb;
+      let db;
+      
+      if (milkDataDb && typeof milkDataDb === 'object' && 'local' in milkDataDb) {
+        db = milkDataDb.local;
+      } else {
+        // Fallback to direct database access
+        console.warn('Using fallback database access for milk data');
+        return [];
+      }
       
       const result = await db.find({
         selector: { employeeId: userId },
