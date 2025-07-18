@@ -9,6 +9,12 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  optimizeDeps: {
+    include: ['pouchdb-browser']
+  },
+  define: {
+    global: 'globalThis'
+  },
   plugins: [
     react(),
     mode === 'development' &&
@@ -16,6 +22,7 @@ export default defineConfig(({ mode }) => ({
   ].filter(Boolean),
   resolve: {
     alias: {
+      events: 'events',
       "@": path.resolve(__dirname, "./src"),
     },
   },

@@ -2,12 +2,12 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
-
+import { lazy, Suspense } from "react";
 // Lazy load components to avoid loading issues
 const LoginForm = lazy(() => import("@/components/auth/LoginForm"));
 const Dashboard = lazy(() => import("@/components/dashboard/Dashboard"));
 
-import { lazy, Suspense } from "react";
+
 
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
