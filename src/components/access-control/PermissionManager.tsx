@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,65 +6,46 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, Shield, UserCheck, UserX, Edit, Trash2 } from "lucide-react";
+import { Users, Shield, Edit, Trash2, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
-
-interface Employee {
-  id: string;
-  name: string;
-  username: string;
-  role: 'employee';
-  isActive: boolean;
-  permissions: {
-    master: boolean;
-    transactions: boolean;
-    reports: boolean;
-    dairyReports: boolean;
-    system: boolean;
-  };
-}
+import { AuthService, User } from "@/services/authService";
+import { DataService } from "@/services/dataService";
 
 const PermissionManager = () => {
   const { user } = useAuth();
-  const [employees, setEmployees] = useState<Employee[]>([
-    {
-      id: '2',
-      name: 'राम पाटील',
-      username: 'employee1',
-      role: 'employee',
-      isActive: true,
-      permissions: {
-        master: true,
-        transactions: true,
-        reports: false,
-        dairyReports: false,
-        system: false
-      }
-    },
-    {
-      id: '3',
-      name: 'सीता शर्मा',
-      username: 'employee2',
-      role: 'employee',
-      isActive: false,
-      permissions: {
-        master: false,
-        transactions: true,
-        reports: true,
-        dairyReports: false,
-        system: false
-      }
-    }
-  ]);
-
+  const [employees, setEmployees] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newEmployee, setNewEmployee] = useState({
     name: '',
     username: '',
+    email: '',
     password: ''
   });
 
-  const [editingEmployee, setEditingEmployee] = useState<string | null>(null);
+  const authService = AuthService.getInstance();
+
+  useEffect(() => {
+    loadEmployees();
+  }, []);
+
+  const loadEmployees = async () => {
+    try {
+      const allUsers = await DataService.getAllUsers();
+      // Filter out admin users, only show employees
+      const employeeUsers = allUsers.filter(u => u.role === 'employee');
+      setEmployees(employeeUsers);
+    } catch (error) {
+      console.error('Error loading employees:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load employees",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (user?.role !== 'admin') {
     return (
@@ -81,8 +61,8 @@ const PermissionManager = () => {
     );
   }
 
-  const handleAddEmployee = () => {
-    if (!newEmployee.name || !newEmployee.username || !newEmployee.password) {
+  const handleAddEmployee = async () => {
+    if (!newEmployee.name || !newEmployee.username || !newEmployee.email || !newEmployee.password) {
       toast({
         title: "Error",
         description: "Please fill all fields",
@@ -91,67 +71,105 @@ const PermissionManager = () => {
       return;
     }
 
-    const employee: Employee = {
-      id: Date.now().toString(),
-      name: newEmployee.name,
-      username: newEmployee.username,
-      role: 'employee',
-      isActive: true,
-      permissions: {
-        master: false,
-        transactions: false,
-        reports: false,
-        dairyReports: false,
-        system: false
+    try {
+      const result = await authService.registerUser({
+        username: newEmployee.username,
+        email: newEmployee.email,
+        password: newEmployee.password,
+        name: newEmployee.name,
+        role: 'employee'
+      });
+
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: `Employee ${newEmployee.name} added successfully`
+        });
+        
+        setNewEmployee({ name: '', username: '', email: '', password: '' });
+        await loadEmployees(); // Reload the employees list
+      } else {
+        toast({
+          title: "Error",
+          description: result.message,
+          variant: "destructive"
+        });
       }
-    };
-
-    setEmployees([...employees, employee]);
-    setNewEmployee({ name: '', username: '', password: '' });
-    
-    toast({
-      title: "Success",
-      description: `Employee ${employee.name} added successfully`
-    });
+    } catch (error) {
+      console.error('Error adding employee:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add employee",
+        variant: "destructive"
+      });
+    }
   };
 
-  const toggleEmployeeStatus = (employeeId: string) => {
-    setEmployees(employees.map(emp => 
-      emp.id === employeeId 
-        ? { ...emp, isActive: !emp.isActive }
-        : emp
-    ));
-    
-    const employee = employees.find(emp => emp.id === employeeId);
-    toast({
-      title: "Status Updated",
-      description: `${employee?.name} is now ${employee?.isActive ? 'inactive' : 'active'}`
-    });
+  const toggleEmployeeStatus = async (employeeId: string) => {
+    try {
+      const success = await authService.toggleUserStatus(employeeId);
+      if (success) {
+        await loadEmployees(); // Reload to get updated status
+        const employee = employees.find(emp => emp._id === employeeId);
+        toast({
+          title: "Status Updated",
+          description: `${employee?.name} status has been updated`
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update employee status",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling employee status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update employee status",
+        variant: "destructive"
+      });
+    }
   };
 
-  const updatePermission = (employeeId: string, permission: keyof Employee['permissions'], value: boolean) => {
-    setEmployees(employees.map(emp => 
-      emp.id === employeeId 
-        ? { 
-            ...emp, 
-            permissions: { 
-              ...emp.permissions, 
-              [permission]: value 
-            } 
-          }
-        : emp
-    ));
+  const updatePermission = async (employeeId: string, permission: keyof User['permissions'], value: boolean) => {
+    try {
+      const employee = employees.find(emp => emp._id === employeeId);
+      if (!employee) return;
+
+      const updatedPermissions = {
+        ...employee.permissions,
+        [permission]: value
+      };
+
+      const success = await authService.updateUserPermissions(employeeId, updatedPermissions);
+      if (success) {
+        await loadEmployees(); // Reload to get updated permissions
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update permissions",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error updating permissions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update permissions",
+        variant: "destructive"
+      });
+    }
   };
 
-  const deleteEmployee = (employeeId: string) => {
-    const employee = employees.find(emp => emp.id === employeeId);
-    setEmployees(employees.filter(emp => emp.id !== employeeId));
-    
-    toast({
-      title: "Employee Deleted",
-      description: `${employee?.name} has been removed from the system`
-    });
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="w-8 h-8 animate-spin" />
+        <span className="ml-2">Loading employees...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -170,7 +188,7 @@ const PermissionManager = () => {
           <CardDescription>Create new employee account with custom permissions</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="name">Employee Name</Label>
               <Input
@@ -187,6 +205,16 @@ const PermissionManager = () => {
                 value={newEmployee.username}
                 onChange={(e) => setNewEmployee({...newEmployee, username: e.target.value})}
                 placeholder="Enter username"
+              />
+            </div>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={newEmployee.email}
+                onChange={(e) => setNewEmployee({...newEmployee, email: e.target.value})}
+                placeholder="Enter email"
               />
             </div>
             <div>
@@ -213,93 +241,93 @@ const PermissionManager = () => {
           <CardDescription>Manage access levels for each employee</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Master</TableHead>
-                  <TableHead>Transactions</TableHead>
-                  <TableHead>Reports</TableHead>
-                  <TableHead>Dairy Reports</TableHead>
-                  <TableHead>System</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {employees.map((employee) => (
-                  <TableRow key={employee.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{employee.name}</div>
-                        <div className="text-sm text-gray-500">@{employee.username}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={employee.isActive}
-                          onCheckedChange={() => toggleEmployeeStatus(employee.id)}
-                        />
-                        <Badge variant={employee.isActive ? "default" : "secondary"}>
-                          {employee.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={employee.permissions.master}
-                        onCheckedChange={(value) => updatePermission(employee.id, 'master', value)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={employee.permissions.transactions}
-                        onCheckedChange={(value) => updatePermission(employee.id, 'transactions', value)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={employee.permissions.reports}
-                        onCheckedChange={(value) => updatePermission(employee.id, 'reports', value)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={employee.permissions.dairyReports}
-                        onCheckedChange={(value) => updatePermission(employee.id, 'dairyReports', value)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={employee.permissions.system}
-                        onCheckedChange={(value) => updatePermission(employee.id, 'system', value)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditingEmployee(employee.id)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deleteEmployee(employee.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          {employees.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No employees found. Add your first employee above.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Master</TableHead>
+                    <TableHead>Transactions</TableHead>
+                    <TableHead>Reports</TableHead>
+                    <TableHead>Dairy Reports</TableHead>
+                    <TableHead>System</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {employees.map((employee) => (
+                    <TableRow key={employee._id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{employee.name}</div>
+                          <div className="text-sm text-gray-500">@{employee.username}</div>
+                          <div className="text-xs text-gray-400">{employee.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={employee.isActive}
+                            onCheckedChange={() => toggleEmployeeStatus(employee._id)}
+                          />
+                          <Badge variant={employee.isActive ? "default" : "secondary"}>
+                            {employee.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={employee.permissions.master}
+                          onCheckedChange={(value) => updatePermission(employee._id, 'master', value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={employee.permissions.transactions}
+                          onCheckedChange={(value) => updatePermission(employee._id, 'transactions', value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={employee.permissions.reports}
+                          onCheckedChange={(value) => updatePermission(employee._id, 'reports', value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={employee.permissions.dairyReports}
+                          onCheckedChange={(value) => updatePermission(employee._id, 'dairyReports', value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={employee.permissions.system}
+                          onCheckedChange={(value) => updatePermission(employee._id, 'system', value)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {/* Edit functionality can be added later */}}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -312,7 +340,7 @@ const PermissionManager = () => {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {['master', 'transactions', 'reports', 'dairyReports', 'system'].map((permission) => {
               const count = employees.filter(emp => 
-                emp.isActive && emp.permissions[permission as keyof Employee['permissions']]
+                emp.isActive && emp.permissions[permission as keyof User['permissions']]
               ).length;
               
               return (

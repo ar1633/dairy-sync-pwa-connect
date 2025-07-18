@@ -35,14 +35,42 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const backupService = BackupService.getInstance();
 
   useEffect(() => {
-    // Check for stored auth data
-    const storedUser = authService.getCurrentUser();
-    if (storedUser) {
-      setUser(storedUser);
-      // Start automatic backup for logged in users
-      backupService.startAutomaticBackup();
-    }
-    setLoading(false);
+    const initializeAuth = async () => {
+      // Initialize admin user
+      try {
+        const loginResult = await authService.loginUser({ 
+          username: 'admin', 
+          password: 'admin123' 
+        });
+
+        if (!loginResult.success) {
+          // Admin user doesn't exist, create it
+          await authService.registerUser({
+            username: 'admin',
+            email: 'admin@dairysync.local',
+            password: 'admin123',
+            name: 'System Administrator',
+            role: 'admin'
+          });
+          console.log('Admin user created successfully');
+        } else {
+          // Admin exists, logout to avoid staying logged in during initialization
+          authService.logout();
+        }
+      } catch (error) {
+        console.error('Error initializing admin user:', error);
+      }
+
+      // Check for stored user
+      const storedUser = authService.getCurrentUser();
+      if (storedUser) {
+        setUser(storedUser);
+        backupService.startAutomaticBackup();
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (credentials: LoginCredentials): Promise<boolean> => {

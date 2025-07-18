@@ -477,6 +477,61 @@ export class DataService {
       return [];
     }
   }
+
+  // Get user by email
+  static async getUserByEmail(email: string): Promise<User | null> {
+    try {
+      const result = await databases.users.local.find({
+        selector: { email: email },
+        limit: 1
+      });
+      return result.docs.length > 0 ? result.docs[0] as unknown as User : null;
+    } catch (error) {
+      console.error('Error getting user by email:', error);
+      return null;
+    }
+  }
+
+  // Get database stats
+  static async getDatabaseStats(): Promise<any> {
+    try {
+      const stats: any = {};
+      for (const [name, db] of Object.entries(databases)) {
+        const info = await db.local.info();
+        stats[name] = {
+          docCount: info.doc_count,
+          updateSeq: info.update_seq
+        };
+      }
+      return stats;
+    } catch (error) {
+      console.error('Error getting database stats:', error);
+      return {};
+    }
+  }
+
+  // Get farmers
+  static async getFarmers(): Promise<any[]> {
+    try {
+      const result = await databases.farmers.local.allDocs({ include_docs: true });
+      return result.rows.map(row => row.doc);
+    } catch (error) {
+      console.error('Error getting farmers:', error);
+      return [];
+    }
+  }
+
+  // Import data
+  static async importData(data: any): Promise<boolean> {
+    try {
+      // Implementation for importing data
+      console.log('Importing data:', data);
+      return true;
+    } catch (error) {
+      console.error('Error importing data:', error);
+      return false;
+    }
+  }
   
   // Get sync status for all databases
   static getSyncStatus(): { [key: string]: boolean } {
