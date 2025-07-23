@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -138,5 +137,7 @@ const Dashboard = () => {
     </div>
   );
 };
+
+console.log('[LOG] Loaded src/components/dashboard/Dashboard.tsx');
 
 export default Dashboard;

@@ -9,12 +9,15 @@ import { DataService } from '@/services/dataService';
 import { USBFileProcessor } from '@/utils/eipParser';
 import USBMonitor from './USBMonitor';
 
+console.log('[LOG] Loaded src/components/data-integration/EIPFileProcessor.tsx');
+
 const EIPFileProcessor = () => {
   const [processing, setProcessing] = useState(false);
   const [processedFiles, setProcessedFiles] = useState<string[]>([]);
   const [stats, setStats] = useState<any>(null);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('[EIPFileProcessor] Inside handleFileUpload');
     const files = event.target.files;
     if (!files) return;
 
@@ -23,11 +26,13 @@ const EIPFileProcessor = () => {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
+      console.log('[EIPFileProcessor] Processing uploaded file:', file.name);
       try {
         await USBFileProcessor.processUploadedFile(file);
         newProcessedFiles.push(file.name);
+        console.log('[EIPFileProcessor] File processed:', file.name);
       } catch (error) {
-        console.error(`Error processing ${file.name}:`, error);
+        console.error(`[EIPFileProcessor] Error processing ${file.name}:`, error);
       }
     }
 
@@ -35,18 +40,23 @@ const EIPFileProcessor = () => {
     setProcessing(false);
     
     // Update stats
+    console.log('[EIPFileProcessor] Fetching database stats');
     const dbStats = await DataService.getDatabaseStats();
+    console.log('[EIPFileProcessor] Database stats:', dbStats);
     setStats(dbStats);
   };
 
   const handleUSBDetection = async () => {
+    console.log('[EIPFileProcessor] Inside handleUSBDetection');
     setProcessing(true);
     try {
       await USBFileProcessor.detectAndProcessEIPFiles();
+      console.log('[EIPFileProcessor] USB detection and processing complete');
       const dbStats = await DataService.getDatabaseStats();
+      console.log('[EIPFileProcessor] Database stats:', dbStats);
       setStats(dbStats);
     } catch (error) {
-      console.error('USB detection error:', error);
+      console.error('[EIPFileProcessor] USB detection error:', error);
     }
     setProcessing(false);
   };

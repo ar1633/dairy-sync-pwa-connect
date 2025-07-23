@@ -1,3 +1,4 @@
+// [LOG] Accessed tailwind.config.ts for configuration
 import type { Config } from "tailwindcss";
 
 export default {

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,6 +83,7 @@ const FarmerManagement = () => {
   });
 
   const handleSubmit = (e: React.FormEvent) => {
+    console.log('[FarmerManagement] handleSubmit');
     e.preventDefault();
     
     const selectedCentreData = centres.find(c => c.number === formData.centreNumber);
@@ -119,6 +119,7 @@ const FarmerManagement = () => {
   };
 
   const resetForm = () => {
+    console.log('[FarmerManagement] resetForm');
     setFormData({
       centreNumber: '',
       farmerId: '',
@@ -142,6 +143,7 @@ const FarmerManagement = () => {
   };
 
   const handleEdit = (farmer: Farmer) => {
+    console.log('[FarmerManagement] handleEdit', farmer);
     setFormData({
       centreNumber: farmer.centreNumber,
       farmerId: farmer.farmerId,
@@ -165,6 +167,7 @@ const FarmerManagement = () => {
   };
 
   const handleDelete = (id: string) => {
+    console.log('[FarmerManagement] handleDelete', id);
     setFarmers(farmers.filter(farmer => farmer.id !== id));
     toast({
       title: "Farmer Deleted",
@@ -477,3 +480,5 @@ const FarmerManagement = () => {
 };
 
 export default FarmerManagement;
+
+console.log('[LOG] Loaded src/components/master/FarmerManagement.tsx');

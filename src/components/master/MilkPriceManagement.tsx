@@ -372,3 +372,5 @@ const MilkPriceManagement = () => {
 };
 
 export default MilkPriceManagement;
+
+console.log('[LOG] Loaded src/components/master/MilkPriceManagement.tsx');

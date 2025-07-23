@@ -4,6 +4,7 @@ export class InitializationService {
   private static initialized = false;
 
   static async initializeSystem(): Promise<void> {
+    console.log('[InitializationService] initializeSystem');
     if (this.initialized) return;
 
     try {
@@ -13,9 +14,11 @@ export class InitializationService {
     } catch (error) {
       console.error('Error initializing system:', error);
     }
+    console.log('[InitializationService] initializeSystem result', this.initialized);
   }
 
   private static async ensureAdminUser(): Promise<void> {
+    console.log('[InitializationService] ensureAdminUser');
     const authService = AuthService.getInstance();
     
     // Try to login with admin credentials to check if admin exists
@@ -23,6 +26,7 @@ export class InitializationService {
       username: 'admin', 
       password: 'admin123' 
     });
+    console.log('[InitializationService] ensureAdminUser loginResult', loginResult);
 
     if (!loginResult.success) {
       // Admin user doesn't exist, create it
@@ -33,6 +37,7 @@ export class InitializationService {
         name: 'System Administrator',
         role: 'admin'
       });
+      console.log('[InitializationService] ensureAdminUser registerResult', registerResult);
 
       if (registerResult.success) {
         console.log('Admin user created successfully');

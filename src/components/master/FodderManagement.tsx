@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,8 @@ import FodderProvidersTab from "@/components/fodder/FodderProvidersTab";
 import FodderInfoTab from "@/components/fodder/FodderInfoTab";
 import PurchaseEntryTab from "@/components/fodder/PurchaseEntryTab";
 import AdvanceInfoTab from "@/components/fodder/AdvanceInfoTab";
+
+console.log('[LOG] Loaded src/components/master/FodderManagement.tsx');
 
 const FodderManagement = () => {
   return (

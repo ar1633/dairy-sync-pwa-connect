@@ -1,6 +1,7 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart } from "lucide-react";
+
+console.log('[LOG] Loaded src/components/fodder/PurchaseEntryTab.tsx');
 
 const PurchaseEntryTab = () => {
   return (

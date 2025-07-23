@@ -1,6 +1,7 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Package } from "lucide-react";
+
+console.log('[LOG] Loaded src/components/fodder/FodderInfoTab.tsx');
 
 const FodderInfoTab = () => {
   return (

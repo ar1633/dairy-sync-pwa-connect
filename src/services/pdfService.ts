@@ -1,4 +1,3 @@
-
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
@@ -60,13 +59,14 @@ export class PDFService {
     doc.text('Krishi DairySync - Dairy Management System', pageWidth / 2, pageHeight - 10, { align: 'center' });
   }
 
-  static generateMilkPricesPDF(prices: MilkPrice[], options: PDFOptions): void {
+  static async generatePDF(data: any, options?: any): Promise<Blob> {
+    console.log('[PDFService] generatePDF', data, options);
     const doc = new jsPDF(options.orientation || 'portrait');
     
     const startY = this.createHeader(doc, options.title);
     
     // Prepare table data
-    const tableData = prices.map(price => [
+    const tableData = data.prices.map(price => [
       price.centreId,
       price.centreName,
       price.milkType === 'cow' ? 'Cow' : 'Buffalo',
@@ -121,6 +121,23 @@ export class PDFService {
     
     const filename = options.filename || `milk-prices-${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(filename);
+    
+    const pdfBlob = await doc.output('blob');
+    console.log('[PDFService] generatePDF result', pdfBlob);
+    return pdfBlob;
+  }
+
+  static async downloadPDF(blob: Blob, filename: string): Promise<void> {
+    console.log('[PDFService] downloadPDF', filename);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    console.log('[PDFService] downloadPDF result', filename);
   }
 
   static generateFarmerReportPDF(farmers: any[], options: PDFOptions): void {

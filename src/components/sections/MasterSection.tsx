@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,6 +60,7 @@ const MasterSection = () => {
   ];
 
   const renderSubSection = () => {
+    console.log('[MasterSection] renderSubSection', activeSubSection);
     switch (activeSubSection) {
       case 'centres':
         return <CentreManagement />;
@@ -136,3 +136,5 @@ const MasterSection = () => {
 };
 
 export default MasterSection;
+
+console.log('[LOG] Loaded src/components/sections/MasterSection.tsx');

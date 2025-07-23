@@ -12,6 +12,8 @@ import { toast } from "@/hooks/use-toast";
 import { AuthService, User } from "@/services/authService";
 import { DataService } from "@/services/dataService";
 
+console.log('[LOG] Loaded src/components/access-control/PermissionManager.tsx');
+
 const PermissionManager = () => {
   const { user } = useAuth();
   const [employees, setEmployees] = useState<User[]>([]);

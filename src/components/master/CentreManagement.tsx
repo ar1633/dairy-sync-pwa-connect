@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,8 @@ interface Centre {
 }
 
 const CentreManagement = () => {
+  console.log('[LOG] Loaded src/components/master/CentreManagement.tsx');
+
   const [centres, setCentres] = useState<Centre[]>([
     {
       id: "1",
@@ -48,6 +49,7 @@ const CentreManagement = () => {
   const [language, setLanguage] = useState<"english" | "marathi">("english");
 
   const handleSubmit = (e: React.FormEvent) => {
+    console.log('[CentreManagement] handleSubmit');
     e.preventDefault();
     
     if (isEditing && editingId) {
@@ -85,12 +87,14 @@ const CentreManagement = () => {
   };
 
   const handleEdit = (centre: Centre) => {
+    console.log('[CentreManagement] handleEdit', centre);
     setFormData(centre);
     setIsEditing(true);
     setEditingId(centre.id);
   };
 
   const handleDelete = (id: string) => {
+    console.log('[CentreManagement] handleDelete', id);
     setCentres(centres.filter(centre => centre.id !== id));
     toast({
       title: language === "english" ? "Centre Deleted" : "केंद्र हटवले",
@@ -99,6 +103,7 @@ const CentreManagement = () => {
   };
 
   const downloadPDF = () => {
+    console.log('[CentreManagement] downloadPDF');
     toast({
       title: language === "english" ? "PDF Download" : "पीडीएफ डाउनलोड",
       description: language === "english" ? "PDF generation feature coming soon" : "पीडीएफ तयार करण्याचे वैशिष्ट्य लवकरच येत आहे"

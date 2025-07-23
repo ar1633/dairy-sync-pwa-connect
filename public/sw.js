@@ -1,3 +1,4 @@
+console.log('[LOG] Loaded sw.js');
 
 const CACHE_NAME = 'krishi-dairy-sync-v2';
 const DATA_CACHE = 'dairy-data-v1';
@@ -13,6 +14,7 @@ const urlsToCache = [
 
 // Install event - cache resources
 self.addEventListener('install', (event) => {
+  console.log('[ServiceWorker] install event');
   console.log('Service Worker installing...');
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -26,6 +28,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean old caches
 self.addEventListener('activate', (event) => {
+  console.log('[ServiceWorker] activate event');
   console.log('Service Worker activating...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -44,6 +47,7 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+  console.log('[ServiceWorker] fetch event:', event.request.url);
   // Handle API requests differently
   if (event.request.url.includes('/api/')) {
     event.respondWith(
@@ -81,7 +85,7 @@ self.addEventListener('fetch', (event) => {
 
 // Handle background sync for data
 self.addEventListener('sync', (event) => {
-  console.log('Background sync triggered:', event.tag);
+  console.log('[ServiceWorker] sync event:', event.tag);
   
   if (event.tag === 'milk-data-sync') {
     event.waitUntil(syncMilkData());
@@ -90,7 +94,7 @@ self.addEventListener('sync', (event) => {
 
 // Handle push notifications
 self.addEventListener('push', (event) => {
-  console.log('Push message received:', event);
+  console.log('[ServiceWorker] push event:', event);
   
   const options = {
     body: event.data ? event.data.text() : 'New dairy data available',
@@ -122,7 +126,7 @@ self.addEventListener('push', (event) => {
 
 // Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification click received:', event);
+  console.log('[ServiceWorker] notificationclick event:', event);
   
   event.notification.close();
   
@@ -135,6 +139,7 @@ self.addEventListener('notificationclick', (event) => {
 
 // Sync milk data function
 async function syncMilkData() {
+  console.log('[ServiceWorker] Inside syncMilkData');
   try {
     console.log('Syncing milk data...');
     // This would sync with a remote server when implemented
@@ -147,6 +152,7 @@ async function syncMilkData() {
 
 // Handle file processing messages
 self.addEventListener('message', (event) => {
+  console.log('[ServiceWorker] message event:', event.data);
   if (event.data && event.data.type === 'PROCESS_EIP_FILE') {
     console.log('Processing EIP file in service worker');
     // Handle EIP file processing in background
@@ -155,6 +161,7 @@ self.addEventListener('message', (event) => {
 });
 
 function processEIPFile(fileContent) {
+  console.log('[ServiceWorker] Inside processEIPFile');
   // Process EIP file in background
   console.log('Background EIP processing started');
   // This would be handled by the main thread DataService

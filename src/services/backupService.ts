@@ -1,4 +1,3 @@
-
 import { DataService } from './dataService';
 import { toast } from '@/hooks/use-toast';
 
@@ -22,6 +21,7 @@ export class BackupService {
   private readonly MAX_BACKUPS = 10; // Keep last 10 backups
 
   static getInstance(): BackupService {
+    console.log('[BackupService] getInstance');
     if (!BackupService.instance) {
       BackupService.instance = new BackupService();
     }
@@ -30,6 +30,7 @@ export class BackupService {
 
   // Initialize automatic backup
   startAutomaticBackup(): void {
+    console.log('[BackupService] startAutomaticBackup');
     if (this.backupInterval) {
       clearInterval(this.backupInterval);
     }
@@ -43,6 +44,7 @@ export class BackupService {
 
   // Stop automatic backup
   stopAutomaticBackup(): void {
+    console.log('[BackupService] stopAutomaticBackup');
     if (this.backupInterval) {
       clearInterval(this.backupInterval);
       this.backupInterval = null;
@@ -52,6 +54,7 @@ export class BackupService {
 
   // Create backup
   async createBackup(isAutomatic: boolean = false): Promise<{ success: boolean; message: string; backupId?: string }> {
+    console.log('[BackupService] createBackup', isAutomatic);
     try {
       console.log('Creating backup...');
       
@@ -96,6 +99,7 @@ export class BackupService {
 
       console.log(message);
       
+      console.log('[BackupService] createBackup result', { success: true, message, backupId });
       return { 
         success: true, 
         message, 
@@ -119,6 +123,7 @@ export class BackupService {
 
   // Restore from backup
   async restoreBackup(backupId: string): Promise<{ success: boolean; message: string }> {
+    console.log('[BackupService] restoreBackup', backupId);
     try {
       const backupKey = `dairy_backup_${backupId}`;
       const backupDataStr = localStorage.getItem(backupKey);
@@ -148,6 +153,7 @@ export class BackupService {
       // Refresh the application
       window.location.reload();
       
+      console.log('[BackupService] restoreBackup result', { success: true, message });
       return { success: true, message };
     } catch (error) {
       console.error('Restore failed:', error);
@@ -165,6 +171,7 @@ export class BackupService {
 
   // Get backup list
   getBackupList(): Array<{ id: string; metadata: BackupMetadata }> {
+    console.log('[BackupService] getBackupList');
     try {
       const backupListStr = localStorage.getItem('dairy_backup_list');
       if (!backupListStr) {
@@ -172,6 +179,7 @@ export class BackupService {
       }
 
       const backupList = JSON.parse(backupListStr);
+      console.log('[BackupService] getBackupList result', backupList);
       return backupList.sort((a: any, b: any) => 
         new Date(b.metadata.timestamp).getTime() - new Date(a.metadata.timestamp).getTime()
       );
@@ -183,6 +191,7 @@ export class BackupService {
 
   // Delete backup
   async deleteBackup(backupId: string): Promise<{ success: boolean; message: string }> {
+    console.log('[BackupService] deleteBackup', backupId);
     try {
       const backupKey = `dairy_backup_${backupId}`;
       localStorage.removeItem(backupKey);
@@ -191,6 +200,7 @@ export class BackupService {
       const backupList = this.getBackupList().filter(backup => backup.id !== backupId);
       localStorage.setItem('dairy_backup_list', JSON.stringify(backupList));
       
+      console.log('[BackupService] deleteBackup result', { success: true, message: 'Backup deleted successfully' });
       return { success: true, message: 'Backup deleted successfully' };
     } catch (error) {
       console.error('Error deleting backup:', error);
@@ -200,6 +210,7 @@ export class BackupService {
 
   // Update backup list
   private async updateBackupList(backupId: string, metadata: BackupMetadata): Promise<void> {
+    console.log('[BackupService] updateBackupList', backupId, metadata);
     try {
       const backupList = this.getBackupList();
       backupList.push({ id: backupId, metadata });
@@ -211,6 +222,7 @@ export class BackupService {
 
   // Cleanup old backups
   private async cleanupOldBackups(): Promise<void> {
+    console.log('[BackupService] cleanupOldBackups');
     try {
       const backupList = this.getBackupList();
       
@@ -235,6 +247,7 @@ export class BackupService {
 
   // Generate checksum for data integrity
   private generateChecksum(data: any): string {
+    console.log('[BackupService] generateChecksum');
     const str = JSON.stringify(data);
     let hash = 0;
     
@@ -244,11 +257,13 @@ export class BackupService {
       hash = hash & hash; // Convert to 32-bit integer
     }
     
+    console.log('[BackupService] generateChecksum result', hash.toString(16));
     return hash.toString(16);
   }
 
   // Export backup to file
   async exportBackupToFile(backupId: string): Promise<void> {
+    console.log('[BackupService] exportBackupToFile', backupId);
     try {
       const backupKey = `dairy_backup_${backupId}`;
       const backupDataStr = localStorage.getItem(backupKey);
@@ -287,6 +302,7 @@ export class BackupService {
 
   // Import backup from file
   async importBackupFromFile(file: File): Promise<{ success: boolean; message: string }> {
+    console.log('[BackupService] importBackupFromFile', file.name);
     try {
       const fileContent = await file.text();
       const backupData: BackupData = JSON.parse(fileContent);
@@ -312,6 +328,7 @@ export class BackupService {
       // Update backup list
       await this.updateBackupList(backupId, backupData.metadata);
       
+      console.log('[BackupService] importBackupFromFile result', { success: true, message: `Backup imported successfully from ${file.name}` });
       return { 
         success: true, 
         message: `Backup imported successfully from ${file.name}` 
@@ -325,3 +342,5 @@ export class BackupService {
     }
   }
 }
+
+console.log('[LOG] Loaded src/services/backupService.ts');

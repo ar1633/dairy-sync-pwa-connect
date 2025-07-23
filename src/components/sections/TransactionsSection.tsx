@@ -1,10 +1,11 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sunrise, Sunset, Truck, DollarSign, Package2, Coins } from "lucide-react";
 import TransactionForms from "@/components/transactions/TransactionForms";
 import { useLanguage } from "@/contexts/LanguageContext";
+
+console.log('[LOG] Loaded src/components/sections/TransactionsSection.tsx');
 
 const TransactionsSection = () => {
   const { language, setLanguage, t } = useLanguage();

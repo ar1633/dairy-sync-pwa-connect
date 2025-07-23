@@ -7,6 +7,8 @@ import EverestDataImport from "@/components/data-integration/EverestDataImport";
 import { useState } from "react";
 import SystemBackupManager from "@/components/system/SystemBackupManager";
 
+console.log('[LOG] Loaded src/components/sections/SystemSection.tsx');
+
 const SystemSection = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';

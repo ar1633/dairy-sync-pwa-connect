@@ -1,3 +1,5 @@
+console.log('[LOG] Loaded src/utils/eipParser.ts');
+
 import * as PouchDB from 'pouchdb-browser';
 
 export interface MilkRecord {
@@ -23,6 +25,7 @@ export class USBFileProcessor {
   
   // Start USB monitoring with proper error handling
   static async startUSBMonitoring(): Promise<void> {
+    console.log('[USBFileProcessor] Inside startUSBMonitoring');
     if (!('usb' in navigator)) {
       console.warn('WebUSB not supported in this browser');
       return;
@@ -57,6 +60,7 @@ export class USBFileProcessor {
   
   // Stop USB monitoring
   static stopUSBMonitoring(): void {
+    console.log('[USBFileProcessor] Inside stopUSBMonitoring');
     if (!('usb' in navigator)) return;
     
     this.isMonitoring = false;
@@ -72,6 +76,7 @@ export class USBFileProcessor {
   
   // Handle USB device connection
   private static async handleUSBConnect(event: USBConnectionEvent): Promise<void> {
+    console.log('[USBFileProcessor] Inside handleUSBConnect', event);
     console.log('USB device connected:', event.device);
     this.usbDevices.push(event.device);
     
@@ -91,6 +96,7 @@ export class USBFileProcessor {
   
   // Handle USB device disconnection
   private static handleUSBDisconnect(event: USBConnectionEvent): void {
+    console.log('[USBFileProcessor] Inside handleUSBDisconnect', event);
     console.log('USB device disconnected:', event.device);
     this.usbDevices = this.usbDevices.filter(device => device !== event.device);
     
@@ -105,6 +111,7 @@ export class USBFileProcessor {
   
   // Scan USB device for EIP files
   private static async scanDeviceForEIPFiles(device: USBDevice): Promise<void> {
+    console.log('[USBFileProcessor] Inside scanDeviceForEIPFiles', device);
     try {
       // Note: Direct file access from USB devices via WebUSB is limited
       // This is a placeholder for the scanning logic
@@ -131,22 +138,26 @@ export class USBFileProcessor {
   
   // Get monitoring status
   static getMonitoringStatus(): boolean {
+    console.log('[USBFileProcessor] Inside getMonitoringStatus');
     return this.isMonitoring;
   }
   
   // Get connected USB devices
   static getConnectedDevices(): USBDevice[] {
+    console.log('[USBFileProcessor] Inside getConnectedDevices');
     return [...this.usbDevices];
   }
   
   // Auto-process EIP directory using File System Access API
   static async autoProcessEIPDirectory(): Promise<void> {
+    console.log('[USBFileProcessor] Inside autoProcessEIPDirectory');
     if (!('showDirectoryPicker' in window)) {
       throw new Error('File System Access API not supported');
     }
     
     try {
       // Request directory access
+      console.log('[USBFileProcessor] Requesting directory access');
       const directoryHandle = await (window as any).showDirectoryPicker({
         mode: 'read'
       });
@@ -157,16 +168,17 @@ export class USBFileProcessor {
       const eipFiles: File[] = [];
       
       for await (const [name, handle] of directoryHandle.entries()) {
+        console.log('[USBFileProcessor] Checking file:', name);
         if (handle.kind === 'file' && name.toLowerCase().endsWith('.eip')) {
           const file = await handle.getFile();
           eipFiles.push(file);
         }
       }
-      
-      console.log(`Found ${eipFiles.length} EIP files`);
+      console.log('[USBFileProcessor] Found EIP files:', eipFiles.map(f => f.name));
       
       // Process each EIP file
       for (const file of eipFiles) {
+        console.log('[USBFileProcessor] Processing file:', file.name);
         await this.processUploadedFile(file);
       }
       
@@ -179,13 +191,14 @@ export class USBFileProcessor {
       }
       
     } catch (error) {
-      console.error('Error auto-processing EIP directory:', error);
+      console.error('[USBFileProcessor] Error auto-processing EIP directory:', error);
       throw error;
     }
   }
   
   // Detect and process EIP files (fallback method)
   static async detectAndProcessEIPFiles(): Promise<void> {
+    console.log('[USBFileProcessor] Inside detectAndProcessEIPFiles');
     try {
       // Use File System Access API if available
       if ('showDirectoryPicker' in window) {
@@ -223,24 +236,28 @@ export class USBFileProcessor {
   
   // Process uploaded EIP file
   static async processUploadedFile(file: File): Promise<void> {
+    console.log('[USBFileProcessor] Inside processUploadedFile', file.name);
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
       reader.onload = async (event) => {
+        console.log('[USBFileProcessor] File read complete:', file.name);
         const fileContent = event.target?.result as string;
         
         try {
           const records = EIPParser.parse(fileContent);
+          console.log('[USBFileProcessor] Parsed records:', records.length);
           
           // Save each record to PouchDB
           const milkDataDb = new PouchDB('milk_data', { adapter: 'idb' });
           
           for (const record of records) {
             try {
+              console.log('[USBFileProcessor] Saving record to PouchDB:', record._id);
               await milkDataDb.put(record);
-              console.log('Record saved:', record._id);
+              console.log('[USBFileProcessor] Record saved:', record._id);
             } catch (dbError) {
-              console.error('Error saving record to PouchDB:', dbError);
+              console.error('[USBFileProcessor] Error saving record to PouchDB:', dbError);
             }
           }
           
@@ -248,13 +265,13 @@ export class USBFileProcessor {
           resolve();
           
         } catch (parseError) {
-          console.error('Error parsing EIP file:', parseError);
+          console.error('[USBFileProcessor] Error parsing EIP file:', parseError);
           reject(parseError);
         }
       };
       
       reader.onerror = (error) => {
-        console.error('Error reading EIP file:', error);
+        console.error('[USBFileProcessor] Error reading EIP file:', error);
         reject(error);
       };
       
@@ -265,6 +282,7 @@ export class USBFileProcessor {
 
 export class EIPParser {
   static parse(fileContent: string): MilkRecord[] {
+    console.log('[EIPParser] Inside parse');
     const lines = fileContent.split('\n').filter(line => line.trim() !== '');
     const headerLine = lines.shift();
     
@@ -289,6 +307,7 @@ export class EIPParser {
   }
   
   private static parseHeader(headerLine: string): any {
+    console.log('[EIPParser] Inside parseHeader');
     const date = headerLine.substring(0, 2);
     const month = headerLine.substring(2, 4);
     const year = headerLine.substring(4, 8);
@@ -309,6 +328,7 @@ export class EIPParser {
   }
   
   private static parseRecord(line: string, header: any): MilkRecord {
+    console.log('[EIPParser] Inside parseRecord');
     const farmerCode = line.substring(0, 3);
     const session = line.substring(3, 4);
     const quantity = parseInt(line.substring(4, 8), 10) / 100;

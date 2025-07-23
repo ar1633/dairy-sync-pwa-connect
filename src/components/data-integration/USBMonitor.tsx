@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ const USBMonitor = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('[USBMonitor] useEffect');
     // Check initial monitoring status
     setIsMonitoring(USBFileProcessor.getMonitoringStatus());
     
@@ -51,6 +51,7 @@ const USBMonitor = () => {
   }, [toast]);
 
   const toggleMonitoring = async () => {
+    console.log('[USBMonitor] toggleMonitoring');
     if (isMonitoring) {
       USBFileProcessor.stopUSBMonitoring();
       setIsMonitoring(false);
@@ -69,6 +70,7 @@ const USBMonitor = () => {
   };
 
   const handleAutoProcess = async () => {
+    console.log('[USBMonitor] handleAutoProcess');
     try {
       await USBFileProcessor.autoProcessEIPDirectory();
       toast({
@@ -248,3 +250,5 @@ const USBMonitor = () => {
 };
 
 export default USBMonitor;
+
+console.log('[LOG] Loaded src/components/data-integration/USBMonitor.tsx');

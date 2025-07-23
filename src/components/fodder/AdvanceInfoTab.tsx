@@ -1,6 +1,7 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { CreditCard } from "lucide-react";
+
+console.log('[LOG] Loaded src/components/fodder/AdvanceInfoTab.tsx');
 
 const AdvanceInfoTab = () => {
   return (

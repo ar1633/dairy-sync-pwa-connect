@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,6 +54,7 @@ const MilkBuyersManagement = () => {
   });
 
   const handleSubmit = (e: React.FormEvent) => {
+    console.log('[MilkBuyersManagement] handleSubmit');
     e.preventDefault();
     
     if (editingBuyer) {
@@ -83,6 +83,7 @@ const MilkBuyersManagement = () => {
   };
 
   const resetForm = () => {
+    console.log('[MilkBuyersManagement] resetForm');
     setFormData({
       buyerNumber: '',
       name: '',
@@ -97,6 +98,7 @@ const MilkBuyersManagement = () => {
   };
 
   const handleEdit = (buyer: MilkBuyer) => {
+    console.log('[MilkBuyersManagement] handleEdit', buyer);
     setFormData({
       buyerNumber: buyer.buyerNumber,
       name: buyer.name,
@@ -111,6 +113,7 @@ const MilkBuyersManagement = () => {
   };
 
   const handleDelete = (id: string) => {
+    console.log('[MilkBuyersManagement] handleDelete', id);
     setBuyers(buyers.filter(buyer => buyer.id !== id));
     toast({
       title: "Buyer Deleted",
@@ -304,3 +307,5 @@ const MilkBuyersManagement = () => {
 };
 
 export default MilkBuyersManagement;
+
+console.log('[LOG] Loaded src/components/master/MilkBuyersManagement.tsx');

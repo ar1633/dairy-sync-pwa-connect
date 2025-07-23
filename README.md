@@ -1,3 +1,4 @@
+<!-- [LOG] Accessed README.md for documentation -->
 # Welcome to your Lovable project
 
 ## Project info
@@ -71,3 +72,31 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## How does the PWA work?
+
+- The app is a Progressive Web App (PWA), which means it can be installed on desktops and mobile devices directly from the browser.
+- It uses a service worker (`public/sw.js`) to cache assets and enable offline access.
+- Data is stored locally in the browser using PouchDB (IndexedDB).
+- When online, data is synchronized in real-time with CouchDB, allowing multiple devices to see live updates.
+- The app supports background sync, push notifications, and offline-first usage.
+- Users can install the app via the browser's "Install" prompt for a native-like experience.
+
+## How to run CouchDB
+
+**On Ubuntu/Debian:**
+```sh
+sudo apt update
+sudo apt install couchdb
+sudo systemctl start couchdb
+sudo systemctl enable couchdb
+```
+
+**On Windows:**
+- Download CouchDB from [https://couchdb.apache.org/](https://couchdb.apache.org/)
+- Run the installer and follow the setup instructions.
+- Start CouchDB from the Start Menu or Services.
+
+**Verify CouchDB is running:**
+- Open your browser and go to: [http://localhost:5984/_utils](http://localhost:5984/_utils)
+- You should see the CouchDB admin interface.

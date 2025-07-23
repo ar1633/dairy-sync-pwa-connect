@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -97,6 +96,8 @@ const FodderProvidersTab = () => {
       description: "Fodder provider has been removed successfully.",
     });
   };
+
+  console.log('[LOG] Loaded src/components/fodder/FodderProvidersTab.tsx');
 
   return (
     <div className="space-y-6">

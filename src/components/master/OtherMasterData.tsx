@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Phone, CreditCard, Receipt, TrendingUp, TrendingDown, ArrowLeft } from "lucide-react";
@@ -8,6 +7,8 @@ import BankInfoForm from "./forms/BankInfoForm";
 import DebitCreditForm from "./forms/DebitCreditForm";
 import InflowForm from "./forms/InflowForm";
 import OutflowForm from "./forms/OutflowForm";
+
+console.log('[LOG] Loaded src/components/master/OtherMasterData.tsx');
 
 const OtherMasterData = () => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -51,10 +52,12 @@ const OtherMasterData = () => {
   ];
 
   const handleSectionClick = (sectionId: string) => {
+    console.log('[OtherMasterData] handleSectionClick', sectionId);
     setActiveSection(sectionId);
   };
 
   const renderActiveSection = () => {
+    console.log('[OtherMasterData] renderActiveSection', activeSection);
     switch (activeSection) {
       case 'sms-config':
         return <SMSConfigForm />;

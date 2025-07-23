@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,16 +30,19 @@ const SystemBackupManager = () => {
   const backupService = BackupService.getInstance();
 
   useEffect(() => {
+    console.log('[LOG] Loaded src/components/system/SystemBackupManager.tsx');
     loadBackups();
     loadStats();
   }, []);
 
   const loadBackups = () => {
+    console.log('[SystemBackupManager] loadBackups');
     const backupList = backupService.getBackupList();
     setBackups(backupList);
   };
 
   const loadStats = async () => {
+    console.log('[SystemBackupManager] loadStats');
     try {
       const systemStats = await DataService.getDatabaseStats();
       setStats(systemStats);
@@ -50,6 +52,7 @@ const SystemBackupManager = () => {
   };
 
   const handleCreateBackup = async () => {
+    console.log('[SystemBackupManager] handleCreateBackup');
     setIsCreatingBackup(true);
     
     try {
@@ -70,6 +73,7 @@ const SystemBackupManager = () => {
   };
 
   const handleRestoreBackup = async (backupId: string) => {
+    console.log('[SystemBackupManager] handleRestoreBackup', backupId);
     if (!confirm('This will restore all data from the selected backup. Current data will be replaced. Continue?')) {
       return;
     }
@@ -92,6 +96,7 @@ const SystemBackupManager = () => {
   };
 
   const handleDeleteBackup = async (backupId: string) => {
+    console.log('[SystemBackupManager] handleDeleteBackup', backupId);
     if (!confirm('Are you sure you want to delete this backup?')) {
       return;
     }
@@ -111,6 +116,7 @@ const SystemBackupManager = () => {
   };
 
   const handleExportBackup = async (backupId: string) => {
+    console.log('[SystemBackupManager] handleExportBackup', backupId);
     try {
       await backupService.exportBackupToFile(backupId);
     } catch (error) {
@@ -119,6 +125,7 @@ const SystemBackupManager = () => {
   };
 
   const handleImportBackup = async () => {
+    console.log('[SystemBackupManager] handleImportBackup');
     if (!fileInput) {
       toast({
         title: "No File Selected",

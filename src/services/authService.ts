@@ -1,4 +1,3 @@
-
 import bcrypt from 'bcryptjs';
 import { DataService } from './dataService';
 import { toast } from '@/hooks/use-toast';
@@ -40,6 +39,7 @@ export class AuthService {
   private static instance: AuthService;
   
   static getInstance(): AuthService {
+    console.log('[AuthService] getInstance');
     if (!AuthService.instance) {
       AuthService.instance = new AuthService();
     }
@@ -48,17 +48,20 @@ export class AuthService {
 
   // Hash password using bcrypt
   private async hashPassword(password: string): Promise<string> {
+    console.log('[AuthService] hashPassword');
     const saltRounds = 12;
     return await bcrypt.hash(password, saltRounds);
   }
 
   // Verify password
   private async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+    console.log('[AuthService] verifyPassword');
     return await bcrypt.compare(password, hashedPassword);
   }
 
   // Register new user
   async registerUser(userData: RegisterData): Promise<{ success: boolean; message: string; userId?: string }> {
+    console.log('[AuthService] registerUser', userData);
     try {
       // Check if username already exists
       const existingUser = await DataService.getUserByUsername(userData.username);
@@ -91,6 +94,7 @@ export class AuthService {
 
       // Save user to database
       const userId = await DataService.saveUser(newUser);
+      console.log('[AuthService] registerUser result', userId);
 
       return { 
         success: true, 
@@ -108,9 +112,11 @@ export class AuthService {
 
   // Login user
   async loginUser(credentials: LoginCredentials): Promise<{ success: boolean; user?: User; message: string }> {
+    console.log('[AuthService] loginUser', credentials);
     try {
       // Get user by username
       const user = await DataService.getUserByUsername(credentials.username);
+      console.log('[AuthService] loginUser user', user);
       
       if (!user) {
         return { success: false, message: 'Invalid username or password' };
@@ -122,6 +128,7 @@ export class AuthService {
 
       // Verify password
       const isPasswordValid = await this.verifyPassword(credentials.password, user.password);
+      console.log('[AuthService] loginUser isPasswordValid', isPasswordValid);
       
       if (!isPasswordValid) {
         return { success: false, message: 'Invalid username or password' };
@@ -155,6 +162,7 @@ export class AuthService {
 
   // Update user permissions
   async updateUserPermissions(userId: string, permissions: User['permissions']): Promise<boolean> {
+    console.log('[AuthService] updateUserPermissions', userId, permissions);
     try {
       const user = await DataService.getUserById(userId);
       if (!user) {
@@ -164,7 +172,8 @@ export class AuthService {
       user.permissions = permissions;
       user.updatedAt = new Date();
       
-      await DataService.saveUser(user);
+      const result = await DataService.saveUser(user);
+      console.log('[AuthService] updateUserPermissions result', result);
       return true;
     } catch (error) {
       console.error('Error updating permissions:', error);
@@ -174,6 +183,7 @@ export class AuthService {
 
   // Toggle user active status
   async toggleUserStatus(userId: string): Promise<boolean> {
+    console.log('[AuthService] toggleUserStatus', userId);
     try {
       const user = await DataService.getUserById(userId);
       if (!user) {
@@ -183,7 +193,8 @@ export class AuthService {
       user.isActive = !user.isActive;
       user.updatedAt = new Date();
       
-      await DataService.saveUser(user);
+      const result = await DataService.saveUser(user);
+      console.log('[AuthService] toggleUserStatus result', result);
       return true;
     } catch (error) {
       console.error('Error toggling user status:', error);
@@ -193,6 +204,7 @@ export class AuthService {
 
   // Get default permissions based on role
   private getDefaultPermissions(role: 'admin' | 'employee'): User['permissions'] {
+    console.log('[AuthService] getDefaultPermissions', role);
     if (role === 'admin') {
       return {
         master: true,
@@ -214,12 +226,12 @@ export class AuthService {
 
   // Get current user from localStorage
   getCurrentUser(): User | null {
+    console.log('[AuthService] getCurrentUser');
     try {
       const userData = localStorage.getItem('dairy_user');
-      if (userData) {
-        return JSON.parse(userData);
-      }
-      return null;
+      const user = userData ? JSON.parse(userData) : null;
+      console.log('[AuthService] getCurrentUser result', user);
+      return user;
     } catch (error) {
       console.error('Error getting current user:', error);
       return null;
@@ -228,6 +240,7 @@ export class AuthService {
 
   // Logout user
   logout(): void {
+    console.log('[AuthService] logout');
     localStorage.removeItem('dairy_user');
     toast({
       title: "Logged Out",
@@ -237,6 +250,7 @@ export class AuthService {
 
   // Change password
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    console.log('[AuthService] changePassword', userId);
     try {
       const user = await DataService.getUserById(userId);
       if (!user) {
@@ -256,7 +270,8 @@ export class AuthService {
       user.password = hashedNewPassword;
       user.updatedAt = new Date();
       
-      await DataService.saveUser(user);
+      const result = await DataService.saveUser(user);
+      console.log('[AuthService] changePassword result', result);
       
       return { success: true, message: 'Password changed successfully' };
     } catch (error) {
