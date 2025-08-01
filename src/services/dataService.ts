@@ -103,7 +103,7 @@ const databases: { [key: string]: DatabaseSet } = {
 
 export class DataService {
   private static syncStatus: { [key: string]: boolean } = {};
-  private static databases = databases;
+  static databases = databases; // Made public for enhanced service
   private static syncCheckInterval: NodeJS.Timeout | null = null;
   private static isInitialized = false;
   
@@ -349,7 +349,7 @@ export class DataService {
   // Milk Collection Data with real-time sync
   static async saveMilkCollection(data: Partial<MilkRecord>): Promise<string> {
     console.log('[DataService] Saving milk collection:', data);
-    const record: MilkRecord = {
+    const record: MilkRecord & { _rev?: string } = {
       _id: `${data.date}_${data.centerCode}_${data.farmerCode}_${data.session}`,
       date: data.date || '',
       month: data.month || '',
@@ -408,7 +408,7 @@ export class DataService {
         }
       });
       
-      const records = result.docs as MilkRecord[];
+      const records = result.docs as any[];
       
       const morningRecords = records.filter(r => r.session === 'M');
       const eveningRecords = records.filter(r => r.session === 'E');
@@ -497,21 +497,6 @@ export class DataService {
     }
   }
 
-  static async getAllUsers(): Promise<User[]> {
-    console.log('[DataService] Getting all users');
-    try {
-      const result = await databases.users.local.allDocs({ include_docs: true });
-      console.log('[DataService] getAllUsers result', result.rows);
-      return result.rows
-        .map(row => row.doc)
-        .filter(doc => doc && doc._id.startsWith('user_')) as unknown as User[];
-    } catch (error) {
-      console.error('Error getting all users:', error);
-      return [];
-    }
-  }
-
-  // Get user by email
   static async getUserByEmail(email: string): Promise<User | null> {
     console.log('[DataService] Getting user by email:', email);
     try {
@@ -519,6 +504,7 @@ export class DataService {
         selector: { email: email },
         limit: 1
       });
+      
       console.log('[DataService] getUserByEmail result', result.docs[0]);
       return result.docs.length > 0 ? result.docs[0] as unknown as User : null;
     } catch (error) {
@@ -527,18 +513,116 @@ export class DataService {
     }
   }
 
-  // Get database stats
+  static async getAllUsers(): Promise<User[]> {
+    console.log('[DataService] Getting all users');
+    try {
+      const result = await databases.users.local.allDocs({ include_docs: true });
+      const users = result.rows
+        .map(row => row.doc)
+        .filter(doc => doc && doc._id.startsWith('user_'));
+      
+      console.log('[DataService] getAllUsers result', users);
+      return users as unknown as User[];
+    } catch (error) {
+      console.error('Error getting all users:', error);
+      return [];
+    }
+  }
+
+  // Farmer Management Methods
+  static async saveFarmer(farmer: any): Promise<string> {
+    console.log('[DataService] Saving farmer:', farmer);
+    try {
+      const farmerData = {
+        ...farmer,
+        updatedAt: new Date()
+      };
+
+      const result = await databases.farmers.local.put(farmerData);
+      console.log('Farmer saved:', result.id);
+      
+      this.broadcastChange('farmers', 'upsert', farmerData);
+      
+      console.log('[DataService] saveFarmer result', result.id);
+      return result.id;
+    } catch (error) {
+      console.error('Error saving farmer:', error);
+      throw error;
+    }
+  }
+
+  static async getFarmers(): Promise<any[]> {
+    console.log('[DataService] Getting farmers');
+    try {
+      const result = await databases.farmers.local.allDocs({ include_docs: true });
+      const farmers = result.rows
+        .map(row => row.doc)
+        .filter(doc => doc && doc._id.startsWith('farmer_'));
+      
+      console.log('[DataService] getFarmers result', farmers);
+      return farmers;
+    } catch (error) {
+      console.error('Error getting farmers:', error);
+      return [];
+    }
+  }
+
+  static async deleteFarmer(farmerId: string): Promise<boolean> {
+    console.log('[DataService] Deleting farmer:', farmerId);
+    try {
+      const farmer = await databases.farmers.local.get(farmerId);
+      await databases.farmers.local.remove(farmer);
+      
+      this.broadcastChange('farmers', 'delete', { _id: farmerId });
+      
+      console.log('[DataService] deleteFarmer result', true);
+      return true;
+    } catch (error) {
+      console.error('Error deleting farmer:', error);
+      return false;
+    }
+  }
+
+  static async getCentres(): Promise<any[]> {
+    console.log('[DataService] Getting centres');
+    try {
+      const result = await databases.centers.local.allDocs({ include_docs: true });
+      const centres = result.rows
+        .map(row => row.doc)
+        .filter(doc => doc && doc._id.startsWith('centre_'));
+      
+      console.log('[DataService] getCentres result', centres);
+      return centres;
+    } catch (error) {
+      console.error('Error getting centres:', error);
+      return [];
+    }
+  }
+  
+  // Get system statistics
   static async getDatabaseStats(): Promise<any> {
     console.log('[DataService] Getting database stats');
     try {
-      const stats: any = {};
+      const stats = {
+        milkData: { count: 0, size: 0 },
+        farmers: { count: 0, size: 0 },
+        centers: { count: 0, size: 0 },
+        users: { count: 0, size: 0 },
+        sync: this.syncStatus
+      };
+
       for (const [name, db] of Object.entries(databases)) {
-        const info = await db.local.info();
-        stats[name] = {
-          docCount: info.doc_count,
-          updateSeq: info.update_seq
-        };
+        try {
+          const info = await db.local.info();
+          stats[name] = {
+            count: info.doc_count,
+            size: info.disk_size || 0
+          };
+        } catch (error) {
+          console.error(`Error getting stats for ${name}:`, error);
+        }
       }
+
       console.log('[DataService] getDatabaseStats result', stats);
       return stats;
     } catch (error) {
@@ -546,152 +630,74 @@ export class DataService {
       return {};
     }
   }
-
-  // Get farmers
-  static async getFarmers(): Promise<any[]> {
-    console.log('[DataService] Getting farmers');
-    try {
-      const result = await databases.farmers.local.allDocs({ include_docs: true });
-      console.log('[DataService] getFarmers result', result.rows);
-      return result.rows.map(row => row.doc);
-    } catch (error) {
-      console.error('Error getting farmers:', error);
-      return [];
-    }
-  }
-
-  // Import data
-  static async importData(data: any): Promise<boolean> {
-    console.log('[DataService] Importing data:', data);
-    try {
-      // Implementation for importing data
-      console.log('Importing data:', data);
-      console.log('[DataService] importData result', true);
-      return true;
-    } catch (error) {
-      console.error('Error importing data:', error);
-      return false;
-    }
+  
+  // Broadcast method for change notifications
+  static broadcastChange(database: string, action: string, data: any): void {
+    console.log('[DataService] Broadcasting change:', database, action, data);
+    window.dispatchEvent(new CustomEvent('dataChange', {
+      detail: { database, action, data, timestamp: new Date() }
+    }));
   }
   
-  // Get sync status for all databases
-  static getSyncStatus(): { [key: string]: boolean } {
-    console.log('[DataService] Getting sync status');
-    console.log('[DataService] getSyncStatus result', this.syncStatus);
-    return { ...this.syncStatus };
-  }
-  
-  // Force sync all databases
-  static async forceSyncAll(): Promise<void> {
-    console.log('[DataService] Forcing sync for all databases');
-    try {
-      for (const [name, db] of Object.entries(databases)) {
-        if (db.sync) {
-          await db.sync.cancel();
-        }
-        
-        if (db.remote && db.local) {
-          // Restart sync
-          db.sync = db.local.sync(db.remote, {
-            live: true,
-            retry: true,
-            heartbeat: 10000,
-            timeout: LAN_SYNC_CONFIG.syncTimeout
-          });
-          
-          console.log(`Forced sync restarted for ${name}`);
-        }
-      }
-      console.log('[DataService] forceSyncAll result');
-    } catch (error) {
-      console.error('Error forcing sync for all databases:', error);
-    }
-  }
-  
-  // Cleanup method to prevent memory leaks
-  static async cleanup(): Promise<void> {
-    console.log('[DataService] Cleaning up');
-    try {
-      if (this.syncCheckInterval) {
-        clearInterval(this.syncCheckInterval);
-        this.syncCheckInterval = null;
-      }
-      
-      // Cancel all sync operations
-      for (const [name, db] of Object.entries(databases)) {
-        if (db.sync) {
-          try {
-            await db.sync.cancel();
-          } catch (error) {
-            console.error(`Error canceling sync for ${name}:`, error);
-          }
-        }
-      }
-      
-      this.isInitialized = false;
-      console.log('DataService cleanup completed');
-      console.log('[DataService] cleanup result');
-    } catch (error) {
-      console.error('Error during DataService cleanup:', error);
-    }
-  }
-  
-  // Enhanced export functionality
+  // Data export functionality
   static async exportData(): Promise<any> {
-    console.log('[DataService] Exporting data');
+    console.log('[DataService] Exporting all data');
     try {
-      const data: any = {};
-      
-      for (const [name, db] of Object.entries(databases)) {
-        const result = await db.local.allDocs({ include_docs: true });
-        let docs = result.rows.map(row => row.doc).filter(doc => doc);
-        
-        // Remove passwords from user data for security
-        if (name === 'users') {
-          docs = docs.map((user: any) => {
-            const { password, ...userWithoutPassword } = user;
-            return userWithoutPassword;
-          });
-        }
-        
-        data[name] = docs;
-      }
-      
-      console.log('[DataService] exportData result', data);
-      return {
+      const data = {
         timestamp: new Date(),
-        data,
-        version: '2.0',
-        syncStatus: this.getSyncStatus()
+        version: '1.0',
+        data: {}
       };
+
+      // Export each database
+      for (const [name, db] of Object.entries(databases)) {
+        try {
+          const result = await db.local.allDocs({ include_docs: true });
+          data.data[name] = result.rows.map(row => row.doc);
+        } catch (error) {
+          console.error(`Error exporting ${name}:`, error);
+          data.data[name] = [];
+        }
+      }
+
+      console.log('[DataService] exportData result', data);
+      return data;
     } catch (error) {
       console.error('Error exporting data:', error);
       throw error;
     }
   }
-  
-  // Broadcast changes to components
-  private static broadcastChange(database: string, action: string, data: any): void {
-    console.log(`[DataService] Broadcasting change: ${database}, ${action}`, data);
-    window.dispatchEvent(new CustomEvent('dataChange', {
-      detail: { database, action, data, timestamp: new Date() }
-    }));
-    
-    if (database === 'users') {
-      window.dispatchEvent(new CustomEvent('userChange', {
-        detail: { action, data, timestamp: new Date() }
-      }));
+
+  // Data import functionality
+  static async importData(backupData: any): Promise<void> {
+    console.log('[DataService] Importing data:', backupData);
+    try {
+      if (!backupData.data) {
+        throw new Error('Invalid backup data format');
+      }
+
+      for (const [dbName, docs] of Object.entries(backupData.data)) {
+        if (databases[dbName] && Array.isArray(docs)) {
+          const db = databases[dbName].local;
+          
+          for (const doc of docs as any[]) {
+            try {
+              // Remove revision to avoid conflicts
+              const cleanDoc = { ...doc };
+              delete cleanDoc._rev;
+              
+              await db.put(cleanDoc);
+            } catch (error) {
+              console.error(`Error importing doc ${doc._id} to ${dbName}:`, error);
+            }
+          }
+        }
+      }
+
+      console.log('[DataService] importData completed');
+    } catch (error) {
+      console.error('Error importing data:', error);
+      throw error;
     }
-    console.log('[DataService] broadcastChange result', database, action, data);
   }
 }
-
-// Initialize farmers database with direct CouchDB sync for testing
-const localDb = new PouchDB('farmers');
-const remoteDb = new PouchDB('http://localhost:5984/farmers', {
-  auth: { username: 'admin', password: 'password' }
-});
-localDb.sync(remoteDb, {
-  live: true,
-  retry: true
-});

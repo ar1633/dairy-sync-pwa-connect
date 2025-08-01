@@ -40,7 +40,7 @@ const ReportsSection = () => {
           break;
           
         case "farmer-list":
-          const farmers = await DataService.getFarmers(centerCode);
+          const farmers = await DataService.getFarmers();
           PDFService.generateFarmerReportPDF(farmers, {
             title: "Farmer List Report",
             filename: `farmer-list-${new Date().toISOString().split('T')[0]}.pdf`

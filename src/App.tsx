@@ -8,6 +8,7 @@ import { Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import PWAInstallButton from "./components/pwa/PWAInstallButton";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
@@ -45,7 +46,7 @@ const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetError
 const App = () => (
   <ErrorBoundary FallbackComponent={ErrorFallback}>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
+        <TooltipProvider>
         <Toaster />
         <Sonner />
         <LanguageProvider>
@@ -60,6 +61,7 @@ const App = () => (
             </BrowserRouter>
           </AuthProvider>
         </LanguageProvider>
+        <PWAInstallButton />
       </TooltipProvider>
     </QueryClientProvider>
   </ErrorBoundary>

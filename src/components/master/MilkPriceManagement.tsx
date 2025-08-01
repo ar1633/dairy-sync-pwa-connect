@@ -124,9 +124,9 @@ const MilkPriceManagement = () => {
     });
   };
 
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
     try {
-      PDFService.generateMilkPricesPDF(prices, {
+      await PDFService.generatePDF({ prices }, {
         title: language === "english" ? "Milk Price List" : "दूध दर यादी",
         orientation: 'landscape',
         filename: `milk-prices-${new Date().toISOString().split('T')[0]}.pdf`

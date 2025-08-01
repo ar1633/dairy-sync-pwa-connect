@@ -61,70 +61,82 @@ export class PDFService {
 
   static async generatePDF(data: any, options?: any): Promise<Blob> {
     console.log('[PDFService] generatePDF', data, options);
-    const doc = new jsPDF(options.orientation || 'portrait');
+    const doc = new jsPDF(options?.orientation || 'portrait');
     
-    const startY = this.createHeader(doc, options.title);
+    const startY = this.createHeader(doc, options?.title || 'Report');
     
-    // Prepare table data
-    const tableData = data.prices.map(price => [
-      price.centreId,
-      price.centreName,
-      price.milkType === 'cow' ? 'Cow' : 'Buffalo',
-      `${price.fat}%`,
-      `${price.degree}°`,
-      `${price.snf}%`,
-      `₹${price.rate}`,
-      price.time === 'morning' ? 'Morning' : 'Evening'
-    ]);
+    // Handle different data types
+    if (data.prices && Array.isArray(data.prices)) {
+      // Milk prices report
+      const tableData = data.prices.map((price: any) => [
+        price.centreId || '',
+        price.centreName || '',
+        price.milkType === 'cow' ? 'Cow' : 'Buffalo',
+        `${price.fat || 0}%`,
+        `${price.degree || 0}°`,
+        `${price.snf || 0}%`,
+        `₹${price.rate || 0}`,
+        price.time === 'morning' ? 'Morning' : 'Evening'
+      ]);
 
-    const tableHeaders = [
-      'Centre ID',
-      'Centre Name', 
-      'Milk Type',
-      'Fat %',
-      'Degree',
-      'SNF %',
-      'Rate (₹/L)',
-      'Time'
-    ];
+      const tableHeaders = [
+        'Centre ID',
+        'Centre Name', 
+        'Milk Type',
+        'Fat %',
+        'Degree',
+        'SNF %',
+        'Rate (₹/L)',
+        'Time'
+      ];
 
-    // Generate table using autoTable
-    (doc as any).autoTable({
-      head: [tableHeaders],
-      body: tableData,
-      startY: startY,
-      theme: 'striped',
-      headStyles: {
-        fillColor: [34, 197, 94], // green-500
-        textColor: 255,
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: {
-        fillColor: [248, 250, 252] // slate-50
-      },
-      styles: {
-        fontSize: 10,
-        cellPadding: 5
-      },
-      columnStyles: {
-        0: { halign: 'center' },
-        2: { halign: 'center' },
-        3: { halign: 'center' },
-        4: { halign: 'center' },
-        5: { halign: 'center' },
-        6: { halign: 'right' },
-        7: { halign: 'center' }
-      }
-    });
+      (doc as any).autoTable({
+        head: [tableHeaders],
+        body: tableData,
+        startY: startY,
+        theme: 'striped',
+        headStyles: {
+          fillColor: [34, 197, 94],
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252]
+        },
+        styles: {
+          fontSize: 10,
+          cellPadding: 5
+        },
+        columnStyles: {
+          0: { halign: 'center' },
+          2: { halign: 'center' },
+          3: { halign: 'center' },
+          4: { halign: 'center' },
+          5: { halign: 'center' },
+          6: { halign: 'right' },
+          7: { halign: 'center' }
+        }
+      });
+    } else {
+      // Generic data report
+      doc.setFontSize(12);
+      doc.text('No specific data format recognized', 20, startY);
+    }
 
     this.createFooter(doc);
     
-    const filename = options.filename || `milk-prices-${new Date().toISOString().split('T')[0]}.pdf`;
-    doc.save(filename);
+    const filename = options?.filename || `report-${new Date().toISOString().split('T')[0]}.pdf`;
     
-    const pdfBlob = await doc.output('blob');
-    console.log('[PDFService] generatePDF result', pdfBlob);
-    return pdfBlob;
+    try {
+      // Save and return blob
+      doc.save(filename);
+      const pdfBlob = doc.output('blob');
+      console.log('[PDFService] generatePDF result', pdfBlob);
+      return pdfBlob;
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      throw error;
+    }
   }
 
   static async downloadPDF(blob: Blob, filename: string): Promise<void> {

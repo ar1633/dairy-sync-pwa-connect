@@ -212,7 +212,7 @@ const FarmerManagement = () => {
               <SelectContent>
                 <SelectItem value="all">All Centres</SelectItem>
                 {centres.map(centre => (
-                  <SelectItem key={centre.number} value={centre.number}>
+                  <SelectItem key={centre._id || centre.number} value={centre.number}>
                     {centre.name}
                   </SelectItem>
                 ))}
