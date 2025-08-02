@@ -193,11 +193,12 @@ export class CouchDBService {
     }
 
     const db = new PouchDB(this.getDatabaseUrl(dbName), {
-      ajax: {
-        timeout: 10000,
-        headers: {
+      fetch(url, opts) {
+        const headers = {
+          ...opts.headers,
           'Authorization': `Basic ${btoa(`${COUCHDB_CONFIG.username}:${COUCHDB_CONFIG.password}`)}`
-        }
+        };
+        return fetch(url, { ...opts, headers });
       }
     });
     console.log('[CouchDBService] getPouchDB result', db);

@@ -627,7 +627,7 @@ export class DataService {
           const info = await db.local.info();
           stats[name] = {
             count: info.doc_count,
-            size: info.disk_size || 0
+            size: (info as any).data_size || 0
           };
         } catch (error) {
           console.error(`Error getting stats for ${name}:`, error);
@@ -798,6 +798,210 @@ export class DataService {
     } catch (error) {
       console.error('Error deleting milk price:', error);
       return false;
+    }
+  }
+
+  // Get profit loss report data
+  static async getProfitLossReport() {
+    console.log('[DataService] getProfitLossReport');
+    try {
+      const milkCollections = await this.getMilkCollections();
+      const totalRevenue = milkCollections.reduce((sum, collection: any) => sum + (collection.amount || 0), 0);
+      const totalExpenses = 50000; // Mock data - replace with actual expense calculation
+      
+      return {
+        revenue: totalRevenue,
+        expenses: totalExpenses,
+        profit: totalRevenue - totalExpenses,
+        period: 'Current Month'
+      };
+    } catch (error) {
+      console.error('[DataService] getProfitLossReport error:', error);
+      return { revenue: 0, expenses: 0, profit: 0, period: 'Current Month' };
+    }
+  }
+
+  // Get employee salaries
+  static async getEmployeeSalaries() {
+    console.log('[DataService] getEmployeeSalaries');
+    try {
+      const employees = await this.getEmployees();
+      return employees.map((emp: any) => ({
+        name: emp.username,
+        position: emp.role,
+        salary: 25000, // Mock data
+        deductions: 2500
+      }));
+    } catch (error) {
+      console.error('[DataService] getEmployeeSalaries error:', error);
+      return [];
+    }
+  }
+
+  // Get payment summary
+  static async getPaymentSummary() {
+    console.log('[DataService] getPaymentSummary');
+    try {
+      const milkCollections = await this.getMilkCollections();
+      const farmers = await this.getFarmers();
+      
+      const summary = farmers.map((farmer: any) => {
+        const farmerCollections = milkCollections.filter((c: any) => c.farmerId === farmer.farmerId);
+        const totalAmount = farmerCollections.reduce((sum, c: any) => sum + (c.amount || 0), 0);
+        
+        return {
+          farmerId: farmer.farmerId,
+          farmerName: farmer.name,
+          totalAmount,
+          totalQuantity: farmerCollections.reduce((sum, c: any) => sum + (c.quantity || 0), 0),
+          collections: farmerCollections.length
+        };
+      });
+      
+      return summary;
+    } catch (error) {
+      console.error('[DataService] getPaymentSummary error:', error);
+      return [];
+    }
+  }
+
+  // Milk Buyers Management
+  static async getMilkBuyers() {
+    console.log('[DataService] getMilkBuyers');
+    try {
+      const result = await databases.settings.local.allDocs({ include_docs: true });
+      return result.rows
+        .map(row => row.doc)
+        .filter(doc => doc && doc._id.startsWith('milkbuyer_') && !doc._id.startsWith('_design'));
+    } catch (error) {
+      console.error('[DataService] getMilkBuyers error:', error);
+      return [];
+    }
+  }
+
+  static async saveMilkBuyer(buyer: any) {
+    console.log('[DataService] saveMilkBuyer', buyer);
+    try {
+      const doc = {
+        _id: buyer.id ? `milkbuyer_${buyer.id}` : `milkbuyer_${Date.now()}`,
+        type: 'milkBuyer',
+        ...buyer,
+        updatedAt: new Date().toISOString()
+      };
+      
+      if (buyer.id) {
+        try {
+          const existing = await databases.settings.local.get(doc._id);
+          doc._rev = existing._rev;
+        } catch (e) {
+          // Document doesn't exist, create new
+        }
+      }
+      
+      const result = await databases.settings.local.put(doc);
+      this.broadcastChange('settings', 'upsert', doc);
+      return { ...doc, _rev: result.rev };
+    } catch (error) {
+      console.error('[DataService] saveMilkBuyer error:', error);
+      throw error;
+    }
+  }
+
+  static async deleteMilkBuyer(id: string) {
+    console.log('[DataService] deleteMilkBuyer', id);
+    try {
+      const docId = id.startsWith('milkbuyer_') ? id : `milkbuyer_${id}`;
+      const doc = await databases.settings.local.get(docId);
+      await databases.settings.local.remove(doc);
+      this.broadcastChange('settings', 'delete', { _id: docId });
+      return true;
+    } catch (error) {
+      console.error('[DataService] deleteMilkBuyer error:', error);
+      throw error;
+    }
+  }
+
+  // Fodder Providers Management
+  static async getFodderProviders() {
+    console.log('[DataService] getFodderProviders');
+    try {
+      const result = await databases.settings.local.allDocs({ include_docs: true });
+      return result.rows
+        .map(row => row.doc)
+        .filter(doc => doc && doc._id.startsWith('fodderprovider_') && !doc._id.startsWith('_design'));
+    } catch (error) {
+      console.error('[DataService] getFodderProviders error:', error);
+      return [];
+    }
+  }
+
+  static async saveFodderProvider(provider: any) {
+    console.log('[DataService] saveFodderProvider', provider);
+    try {
+      const doc = {
+        _id: provider.id ? `fodderprovider_${provider.id}` : `fodderprovider_${Date.now()}`,
+        type: 'fodderProvider',
+        ...provider,
+        updatedAt: new Date().toISOString()
+      };
+      
+      if (provider.id) {
+        try {
+          const existing = await databases.settings.local.get(doc._id);
+          doc._rev = existing._rev;
+        } catch (e) {
+          // Document doesn't exist, create new
+        }
+      }
+      
+      const result = await databases.settings.local.put(doc);
+      this.broadcastChange('settings', 'upsert', doc);
+      return { ...doc, _rev: result.rev };
+    } catch (error) {
+      console.error('[DataService] saveFodderProvider error:', error);
+      throw error;
+    }
+  }
+
+  static async deleteFodderProvider(id: string) {
+    console.log('[DataService] deleteFodderProvider', id);
+    try {
+      const docId = id.startsWith('fodderprovider_') ? id : `fodderprovider_${id}`;
+      const doc = await databases.settings.local.get(docId);
+      await databases.settings.local.remove(doc);
+      this.broadcastChange('settings', 'delete', { _id: docId });
+      return true;
+    } catch (error) {
+      console.error('[DataService] deleteFodderProvider error:', error);
+      throw error;
+    }
+  }
+
+  // Get milk collections
+  static async getMilkCollections() {
+    console.log('[DataService] getMilkCollections');
+    try {
+      const result = await databases.milkData.local.allDocs({ include_docs: true });
+      return result.rows
+        .map(row => row.doc)
+        .filter(doc => doc && !doc._id.startsWith('_design'));
+    } catch (error) {
+      console.error('[DataService] getMilkCollections error:', error);
+      return [];
+    }
+  }
+
+  // Get employees
+  static async getEmployees() {
+    console.log('[DataService] getEmployees');
+    try {
+      const result = await databases.users.local.allDocs({ include_docs: true });
+      return result.rows
+        .map(row => row.doc)
+        .filter(doc => doc && doc._id.startsWith('user_') && !doc._id.startsWith('_design'));
+    } catch (error) {
+      console.error('[DataService] getEmployees error:', error);
+      return [];
     }
   }
 }

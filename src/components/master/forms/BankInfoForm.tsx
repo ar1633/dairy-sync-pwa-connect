@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -43,7 +43,7 @@ const BankInfoForm = () => {
     },
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetch("/api/master-data/banks")
       .then(res => res.ok ? res.json() : [])
       .then(data => setBanks(data));

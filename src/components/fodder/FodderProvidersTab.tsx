@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Edit2, Trash2, Truck } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { DataService } from "@/services/dataService";
 
 interface FodderProvider {
   id: string;
@@ -16,16 +17,26 @@ interface FodderProvider {
 }
 
 const FodderProvidersTab = () => {
-  const [providers, setProviders] = useState<FodderProvider[]>([
-    {
-      id: '1',
-      sellerId: 'FP001',
-      name: 'Maharashtra Feed Supply',
-      address: 'Kolhapur, Maharashtra',
-      phoneNumber: '9876543210',
-      contactPerson: 'Suresh Patil'
-    }
-  ]);
+  const [providers, setProviders] = useState<FodderProvider[]>([]);
+
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        const providersList = await DataService.getFodderProviders();
+        setProviders(providersList.map((p: any) => ({
+          id: p._id,
+          sellerId: p.sellerId,
+          name: p.name,
+          address: p.address,
+          phoneNumber: p.phoneNumber,
+          contactPerson: p.contactPerson
+        })));
+      } catch (error) {
+        console.error('Error fetching fodder providers:', error);
+      }
+    };
+    fetchProviders();
+  }, []);
 
   const [showForm, setShowForm] = useState(false);
   const [editingProvider, setEditingProvider] = useState<FodderProvider | null>(null);
@@ -37,28 +48,39 @@ const FodderProvidersTab = () => {
     contactPerson: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingProvider) {
-      setProviders(providers.map(provider => 
-        provider.id === editingProvider.id 
-          ? { ...provider, ...formData }
-          : provider
-      ));
+    try {
+      if (editingProvider) {
+        const updatedProvider = { ...editingProvider, ...formData };
+        await DataService.saveFodderProvider(updatedProvider);
+        setProviders(providers.map(provider => 
+          provider.id === editingProvider.id 
+            ? updatedProvider
+            : provider
+        ));
+        toast({
+          title: "Provider Updated",
+          description: "Fodder provider has been updated successfully.",
+        });
+      } else {
+        const newProvider: FodderProvider = {
+          id: Date.now().toString(),
+          ...formData
+        };
+        await DataService.saveFodderProvider(newProvider);
+        setProviders([...providers, newProvider]);
+        toast({
+          title: "Provider Added",
+          description: "New fodder provider has been added successfully.",
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Provider Updated",
-        description: "Fodder provider has been updated successfully.",
-      });
-    } else {
-      const newProvider: FodderProvider = {
-        id: Date.now().toString(),
-        ...formData
-      };
-      setProviders([...providers, newProvider]);
-      toast({
-        title: "Provider Added",
-        description: "New fodder provider has been added successfully.",
+        title: "Error",
+        description: "Failed to save fodder provider. Please try again.",
+        variant: "destructive"
       });
     }
     
@@ -89,12 +111,21 @@ const FodderProvidersTab = () => {
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
-    setProviders(providers.filter(provider => provider.id !== id));
-    toast({
-      title: "Provider Deleted",
-      description: "Fodder provider has been removed successfully.",
-    });
+  const handleDelete = async (id: string) => {
+    try {
+      await DataService.deleteFodderProvider(id);
+      setProviders(providers.filter(provider => provider.id !== id));
+      toast({
+        title: "Provider Deleted",
+        description: "Fodder provider has been removed successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete fodder provider. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   console.log('[LOG] Loaded src/components/fodder/FodderProvidersTab.tsx');

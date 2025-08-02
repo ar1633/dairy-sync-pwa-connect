@@ -1,6 +1,15 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
+// Interface for payment summary data
+interface PaymentSummaryData {
+  farmerId: string;
+  farmerName: string;
+  totalAmount: number;
+  totalQuantity: number;
+  collections: number;
+}
+
 interface MilkPrice {
   id: string;
   centreId: string;
@@ -198,6 +207,55 @@ export class PDFService {
     this.createFooter(doc);
     
     const filename = options.filename || `farmer-report-${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(filename);
+  }
+
+  // Generate Payment Summary PDF
+  static generatePaymentSummaryPDF(summaryData: PaymentSummaryData[], startDate: string, endDate: string) {
+    console.log('[PDFService] Generating payment summary PDF');
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.text('Payment Summary Report', 20, 20);
+    
+    doc.setFontSize(12);
+    doc.text(`Period: ${startDate} to ${endDate}`, 20, 35);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 45);
+    
+    // Table headers
+    const headers = [['Farmer ID', 'Farmer Name', 'Collections', 'Total Quantity (L)', 'Total Amount (₹)']];
+    
+    // Table data
+    const data = summaryData.map(summary => [
+      summary.farmerId,
+      summary.farmerName,
+      summary.collections.toString(),
+      summary.totalQuantity.toFixed(2),
+      summary.totalAmount.toFixed(2)
+    ]);
+    
+    // Add table
+    (doc as any).autoTable({
+      head: headers,
+      body: data,
+      startY: 55,
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [66, 139, 202] }
+    });
+    
+    // Summary totals
+    const totalAmount = summaryData.reduce((sum, item) => sum + item.totalAmount, 0);
+    const totalQuantity = summaryData.reduce((sum, item) => sum + item.totalQuantity, 0);
+    const totalCollections = summaryData.reduce((sum, item) => sum + item.collections, 0);
+    
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.text(`Total Collections: ${totalCollections}`, 20, finalY);
+    doc.text(`Total Quantity: ${totalQuantity.toFixed(2)} L`, 20, finalY + 10);
+    doc.text(`Total Amount: ₹${totalAmount.toFixed(2)}`, 20, finalY + 20);
+    
+    // Save
+    const filename = `payment-summary-${startDate}-to-${endDate}.pdf`;
     doc.save(filename);
   }
 

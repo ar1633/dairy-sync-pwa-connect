@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Edit2, Trash2, ShoppingCart } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { DataService } from "@/services/dataService";
 
 interface MilkBuyer {
   id: string;
@@ -18,28 +19,28 @@ interface MilkBuyer {
 }
 
 const MilkBuyersManagement = () => {
-  const [buyers, setBuyers] = useState<MilkBuyer[]>([
-    {
-      id: '1',
-      buyerNumber: 'MB001',
-      name: 'Maharashtra Dairy',
-      address: 'Kolhapur Industrial Area, Maharashtra',
-      commission: 2.5,
-      saving: 50000,
-      phoneNumber: '9876543210',
-      contactPerson: 'Suresh Patil'
-    },
-    {
-      id: '2',
-      buyerNumber: 'MB002',
-      name: 'Local Dairy Co-op',
-      address: 'Village Shirakhed, Kolhapur',
-      commission: 1.8,
-      saving: 25000,
-      phoneNumber: '9876543211',
-      contactPerson: 'Ramesh Kumar'
-    }
-  ]);
+  const [buyers, setBuyers] = useState<MilkBuyer[]>([]);
+
+  useEffect(() => {
+    const fetchBuyers = async () => {
+      try {
+        const buyersList = await DataService.getMilkBuyers();
+        setBuyers(buyersList.map((b: any) => ({
+          id: b._id,
+          buyerNumber: b.buyerNumber,
+          name: b.name,
+          address: b.address,
+          commission: b.commission,
+          saving: b.saving,
+          phoneNumber: b.phoneNumber,
+          contactPerson: b.contactPerson
+        })));
+      } catch (error) {
+        console.error('Error fetching milk buyers:', error);
+      }
+    };
+    fetchBuyers();
+  }, []);
 
   const [showForm, setShowForm] = useState(false);
   const [editingBuyer, setEditingBuyer] = useState<MilkBuyer | null>(null);
@@ -53,29 +54,40 @@ const MilkBuyersManagement = () => {
     contactPerson: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     console.log('[MilkBuyersManagement] handleSubmit');
     e.preventDefault();
     
-    if (editingBuyer) {
-      setBuyers(buyers.map(buyer => 
-        buyer.id === editingBuyer.id 
-          ? { ...buyer, ...formData }
-          : buyer
-      ));
+    try {
+      if (editingBuyer) {
+        const updatedBuyer = { ...editingBuyer, ...formData };
+        await DataService.saveMilkBuyer(updatedBuyer);
+        setBuyers(buyers.map(buyer => 
+          buyer.id === editingBuyer.id 
+            ? updatedBuyer
+            : buyer
+        ));
+        toast({
+          title: "Buyer Updated",
+          description: "Milk buyer information has been updated successfully.",
+        });
+      } else {
+        const newBuyer: MilkBuyer = {
+          id: Date.now().toString(),
+          ...formData
+        };
+        await DataService.saveMilkBuyer(newBuyer);
+        setBuyers([...buyers, newBuyer]);
+        toast({
+          title: "Buyer Added",
+          description: "New milk buyer has been added successfully.",
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Buyer Updated",
-        description: "Milk buyer information has been updated successfully.",
-      });
-    } else {
-      const newBuyer: MilkBuyer = {
-        id: Date.now().toString(),
-        ...formData
-      };
-      setBuyers([...buyers, newBuyer]);
-      toast({
-        title: "Buyer Added",
-        description: "New milk buyer has been added successfully.",
+        title: "Error",
+        description: "Failed to save milk buyer. Please try again.",
+        variant: "destructive"
       });
     }
     
@@ -112,13 +124,22 @@ const MilkBuyersManagement = () => {
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     console.log('[MilkBuyersManagement] handleDelete', id);
-    setBuyers(buyers.filter(buyer => buyer.id !== id));
-    toast({
-      title: "Buyer Deleted",
-      description: "Milk buyer has been removed successfully.",
-    });
+    try {
+      await DataService.deleteMilkBuyer(id);
+      setBuyers(buyers.filter(buyer => buyer.id !== id));
+      toast({
+        title: "Buyer Deleted",
+        description: "Milk buyer has been removed successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete milk buyer. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

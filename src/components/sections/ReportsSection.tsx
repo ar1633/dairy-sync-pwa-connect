@@ -59,11 +59,8 @@ const ReportsSection = () => {
           break;
         case "payment-summary":
           // Integrate payment summary from backend
-          const paymentSummary = await DataService.getPaymentSummary(dateFrom, dateTo, centerCode);
-          PDFService.generatePaymentSummaryPDF(paymentSummary, {
-            title: "Payment Summary Report",
-            filename: `payment-summary-${dateFrom}-to-${dateTo}.pdf`
-          });
+          const paymentSummary = await DataService.getPaymentSummary();
+          PDFService.generatePaymentSummaryPDF(paymentSummary, dateFrom || '2024-01-01', dateTo || '2024-12-31');
           break;
         default:
           throw new Error("Unknown report type");

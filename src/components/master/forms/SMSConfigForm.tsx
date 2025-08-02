@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -39,7 +39,7 @@ const SMSConfigForm = () => {
     },
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Fetch config from backend
     fetch("/api/master-data/sms-config")
       .then(res => res.ok ? res.json() : null)

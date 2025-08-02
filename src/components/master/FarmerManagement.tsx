@@ -135,7 +135,7 @@ const FarmerManagement = () => {
       });
     } else {
       await DataService.saveFarmer(farmerPayload);
-      setFarmers([...farmers, { ...farmerPayload, id: farmerPayload._id }]);
+      setFarmers([...farmers, { ...farmerPayload, id: farmerPayload._id } as any]);
       toast({
         title: "Farmer Added",
         description: "New farmer has been added successfully.",
@@ -238,7 +238,7 @@ const FarmerManagement = () => {
               <SelectContent>
                 <SelectItem value="all">All Centres</SelectItem>
                 {centres.map(centre => (
-                  <SelectItem key={centre._id || centre.number} value={centre.number}>
+                  <SelectItem key={(centre as any)._id || centre.number} value={centre.number}>
                     {centre.name}
                   </SelectItem>
                 ))}
