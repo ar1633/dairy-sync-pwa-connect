@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Edit2, Trash2, Users, Search } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { DataService } from "@/services/dataService";
 
 interface Farmer {
   id: string;
@@ -29,39 +30,51 @@ interface Farmer {
 }
 
 const FarmerManagement = () => {
-  const [farmers, setFarmers] = useState<Farmer[]>([
-    {
-      id: '1',
-      centreNumber: 'C001',
-      centreName: 'Shirakhed Centre',
-      farmerId: 'F001',
-      name: 'Ramesh Patil',
-      address: 'Village Shirakhed, Kolhapur',
-      bankName: 'SBI',
-      accountNumber: '1234567890',
-      aadharNumber: '1234-5678-9012',
-      ifscCode: 'SBIN0001234',
-      phoneNumber: '9876543210',
-      animals: 5,
-      totalAmount: 15000,
-      saving: 2000,
-      difference: 500,
-      interest: 100,
-      pashuId: 'P001',
-      utpaId: 'U001'
-    }
-  ]);
-
+  const [farmers, setFarmers] = useState<Farmer[]>([]);
+  const [centres, setCentres] = useState<{ number: string; name: string }[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingFarmer, setEditingFarmer] = useState<Farmer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCentre, setSelectedCentre] = useState('all');
   
-  // Mock centres - in real app, this would come from centres data
-  const centres = [
-    { number: 'C001', name: 'Shirakhed Centre' },
-    { number: 'C002', name: 'Kagal Centre' }
-  ];
+  useEffect(() => {
+    // Fetch farmers and centres from backend
+    const fetchData = async () => {
+      // Already fetching from backend via DataService
+      const farmerList = await DataService.getFarmers();
+      setFarmers(
+        farmerList.map((f: any) => ({
+          id: f._id,
+          centreNumber: f.centerCode,
+          centreName: f.centerName || "",
+          farmerId: f.farmerId || f.code,
+          name: f.name,
+          address: f.address,
+          bankName: f.bankName,
+          accountNumber: f.accountNumber,
+          aadharNumber: f.aadharNumber,
+          ifscCode: f.ifscCode,
+          phoneNumber: f.phoneNumber,
+          animals: f.animals || 0,
+          totalAmount: f.totalAmount || 0,
+          saving: f.saving || 0,
+          difference: f.difference || 0,
+          interest: f.interest || 0,
+          pashuId: f.pashuId,
+          utpaId: f.utpaId
+        }))
+      );
+      const centreList = await DataService.getCentres();
+      setCentres(
+        centreList.map((c: any) => ({
+          number: c.centerCode || c.number,
+          name: c.centerName || c.name,
+          _id: c._id
+        }))
+      );
+    };
+    fetchData();
+  }, []);
 
   const [formData, setFormData] = useState({
     centreNumber: '',
@@ -82,20 +95,38 @@ const FarmerManagement = () => {
     utpaId: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     console.log('[FarmerManagement] handleSubmit');
     e.preventDefault();
     
     const selectedCentreData = centres.find(c => c.number === formData.centreNumber);
-    
+
+    const farmerPayload = {
+      _id: editingFarmer ? editingFarmer.id : `farmer_${Date.now()}`,
+      centerCode: formData.centreNumber,
+      centerName: selectedCentreData?.name || "",
+      farmerId: formData.farmerId,
+      name: formData.name,
+      address: formData.address,
+      bankName: formData.bankName,
+      accountNumber: formData.accountNumber,
+      aadharNumber: formData.aadharNumber,
+      ifscCode: formData.ifscCode,
+      phoneNumber: formData.phoneNumber,
+      animals: formData.animals,
+      totalAmount: formData.totalAmount,
+      saving: formData.saving,
+      difference: formData.difference,
+      interest: formData.interest,
+      pashuId: formData.pashuId,
+      utpaId: formData.utpaId
+    };
+
     if (editingFarmer) {
-      setFarmers(farmers.map(farmer => 
-        farmer.id === editingFarmer.id 
-          ? { 
-              ...farmer, 
-              ...formData, 
-              centreName: selectedCentreData?.name || ''
-            }
+      await DataService.saveFarmer(farmerPayload);
+      setFarmers(farmers.map(farmer =>
+        farmer.id === editingFarmer.id
+          ? { ...farmer, ...formData, centreName: selectedCentreData?.name || "" }
           : farmer
       ));
       toast({
@@ -103,18 +134,13 @@ const FarmerManagement = () => {
         description: "Farmer information has been updated successfully.",
       });
     } else {
-      const newFarmer: Farmer = {
-        id: Date.now().toString(),
-        ...formData,
-        centreName: selectedCentreData?.name || ''
-      };
-      setFarmers([...farmers, newFarmer]);
+      await DataService.saveFarmer(farmerPayload);
+      setFarmers([...farmers, { ...farmerPayload, id: farmerPayload._id }]);
       toast({
         title: "Farmer Added",
         description: "New farmer has been added successfully.",
       });
     }
-    
     resetForm();
   };
 
@@ -166,8 +192,8 @@ const FarmerManagement = () => {
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
-    console.log('[FarmerManagement] handleDelete', id);
+  const handleDelete = async (id: string) => {
+    await DataService.deleteFarmer(id);
     setFarmers(farmers.filter(farmer => farmer.id !== id));
     toast({
       title: "Farmer Deleted",

@@ -129,9 +129,8 @@ export class PDFService {
     
     try {
       // Save and return blob
-      doc.save(filename);
       const pdfBlob = doc.output('blob');
-      console.log('[PDFService] generatePDF result', pdfBlob);
+      this.downloadPDF(pdfBlob, filename);
       return pdfBlob;
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -270,3 +269,4 @@ export class PDFService {
     doc.save(filename);
   }
 }
+

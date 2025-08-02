@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Edit, Plus, Download } from "lucide-react";
+import { DataService } from "@/services/dataService";
 import { toast } from "@/hooks/use-toast";
 
 type PaymentCycle = "weekly" | "bi-weekly" | "monthly";
@@ -23,17 +24,8 @@ interface Centre {
 const CentreManagement = () => {
   console.log('[LOG] Loaded src/components/master/CentreManagement.tsx');
 
-  const [centres, setCentres] = useState<Centre[]>([
-    {
-      id: "1",
-      number: "001",
-      name: "Main Dairy Centre",
-      nameMarathi: "मुख्य डेअरी केंद्र",
-      address: "Village Road, Pune",
-      addressMarathi: "गाव रोड, पुणे",
-      paymentCycle: "weekly"
-    }
-  ]);
+  // Remove mock data, initialize as empty
+  const [centres, setCentres] = useState<Centre[]>([]);
 
   const [formData, setFormData] = useState({
     number: "",
@@ -48,13 +40,35 @@ const CentreManagement = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [language, setLanguage] = useState<"english" | "marathi">("english");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Fetch centres from backend on mount
+  useEffect(() => {
+    const fetchCentres = async () => {
+      const centreList = await DataService.getCentres();
+      setCentres(
+        centreList.map((c: any) => ({
+          id: c._id,
+          number: c.centerCode || c.number,
+          name: c.centerName || c.name,
+          nameMarathi: c.nameMarathi || "",
+          address: c.address || "",
+          addressMarathi: c.addressMarathi || "",
+          paymentCycle: c.paymentCycle || "weekly"
+        }))
+      );
+    };
+    fetchCentres();
+  }, []);
+
+  // Save to backend
+  const handleSubmit = async (e: React.FormEvent) => {
     console.log('[CentreManagement] handleSubmit');
     e.preventDefault();
     
     if (isEditing && editingId) {
-      setCentres(centres.map(centre => 
-        centre.id === editingId 
+      const updatedCentre = { ...formData, _id: editingId };
+      await DataService.saveCentre(updatedCentre);
+      setCentres(centres.map(centre =>
+        centre.id === editingId
           ? { ...formData, id: editingId }
           : centre
       ));
@@ -65,8 +79,9 @@ const CentreManagement = () => {
     } else {
       const newCentre: Centre = {
         ...formData,
-        id: Date.now().toString()
+        id: `centre_${Date.now()}`
       };
+      await DataService.saveCentre({ ...formData, _id: newCentre.id });
       setCentres([...centres, newCentre]);
       toast({
         title: language === "english" ? "Centre Added" : "केंद्र जोडले",
@@ -93,8 +108,9 @@ const CentreManagement = () => {
     setEditingId(centre.id);
   };
 
-  const handleDelete = (id: string) => {
-    console.log('[CentreManagement] handleDelete', id);
+  // Delete from backend
+  const handleDelete = async (id: string) => {
+    await DataService.deleteCentre(id);
     setCentres(centres.filter(centre => centre.id !== id));
     toast({
       title: language === "english" ? "Centre Deleted" : "केंद्र हटवले",

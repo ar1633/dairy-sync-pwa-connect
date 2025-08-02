@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Calendar, Clock, Users, Truck, Package, Receipt } from "lucide-react";
+import { DataService } from "@/services/dataService";
 
 interface TransactionFormsProps {
   transactionType?: string;
@@ -19,7 +19,11 @@ const TransactionForms = ({ language, transactionType }: TransactionFormsProps) 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [paymentDate, setPaymentDate] = useState<Date>();
   const [paidDate, setPaidDate] = useState<Date>();
-  
+  const [centres, setCentres] = useState<any[]>([]);
+  const [farmers, setFarmers] = useState<any[]>([]);
+  const [selectedCentre, setSelectedCentre] = useState<string>("");
+  const [selectedFarmer, setSelectedFarmer] = useState<string>("");
+
   const translations = {
     en: {
       milkCollection: 'Milk Collection',
@@ -87,6 +91,33 @@ const TransactionForms = ({ language, transactionType }: TransactionFormsProps) 
 
   const t = translations[language];
 
+  useEffect(() => {
+    // Fetch centres and farmers from backend
+    const fetchData = async () => {
+      const centreList = await DataService.getCentres();
+      setCentres(centreList);
+      const farmerList = await DataService.getFarmers();
+      setFarmers(farmerList);
+    };
+    fetchData();
+  }, []);
+
+  const handleSaveEntry = async () => {
+    // Example: Save milk collection entry to backend
+    await DataService.saveMilkCollection({
+      date: selectedDate.toISOString().split("T")[0],
+      centerCode: selectedCentre,
+      farmerCode: selectedFarmer,
+      session: "M", // or "E" based on selection
+      quantity: 0, // get from form
+      fat: 0, // get from form
+      snf: 0, // get from form
+      rate: 0, // get from form
+      amount: 0 // get from form
+    });
+    // Optionally show toast or reset form
+  };
+
   const MilkCollectionForm = () => (
     <Card className="w-full">
       <CardHeader>
@@ -99,13 +130,16 @@ const TransactionForms = ({ language, transactionType }: TransactionFormsProps) 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-2">
             <Label className="text-sm font-medium">{t.center}</Label>
-            <Select defaultValue="80">
+            <Select value={selectedCentre} onValueChange={setSelectedCentre}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select Center" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="80">80 - शिराखेड</SelectItem>
-                <SelectItem value="81">81 - पाटील नगर</SelectItem>
+                {centres.map((c: any) => (
+                  <SelectItem key={c._id} value={c.centerCode || c.number}>
+                    {(c.centerCode || c.number) + " - " + (c.centerName || c.name)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -170,7 +204,7 @@ const TransactionForms = ({ language, transactionType }: TransactionFormsProps) 
         </div>
 
         <div className="flex flex-wrap gap-2 pt-4">
-          <Button className="bg-green-600 hover:bg-green-700">
+          <Button className="bg-green-600 hover:bg-green-700" onClick={handleSaveEntry}>
             Save Entry
           </Button>
           <Button variant="outline">

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +27,6 @@ const ReportsSection = () => {
     }
 
     setIsGenerating(true);
-    
     try {
       switch (reportType) {
         case "milk-collection":
@@ -38,7 +36,6 @@ const ReportsSection = () => {
             filename: `milk-collection-${dateFrom}-to-${dateTo}.pdf`
           });
           break;
-          
         case "farmer-list":
           const farmers = await DataService.getFarmers();
           PDFService.generateFarmerReportPDF(farmers, {
@@ -46,26 +43,31 @@ const ReportsSection = () => {
             filename: `farmer-list-${new Date().toISOString().split('T')[0]}.pdf`
           });
           break;
-          
         case "business-analytics":
-          // Generate business analytics data
+          const stats = await DataService.getDatabaseStats();
           const businessData = {
-            totalRevenue: 150000,
-            totalExpenses: 120000,
-            activeFarmers: 45,
-            avgFat: 4.2,
-            monthlyGrowth: 8.5
+            totalRevenue: stats.payments?.amount || 0,
+            totalExpenses: stats.fodder?.amount || 0,
+            activeFarmers: stats.farmers?.count || 0,
+            avgFat: stats.milkData?.avgFat || 0,
+            monthlyGrowth: 0
           };
           PDFService.generateBusinessReportPDF(businessData, {
             title: "Business Analytics Report",
             filename: `business-analytics-${new Date().toISOString().split('T')[0]}.pdf`
           });
           break;
-          
+        case "payment-summary":
+          // Integrate payment summary from backend
+          const paymentSummary = await DataService.getPaymentSummary(dateFrom, dateTo, centerCode);
+          PDFService.generatePaymentSummaryPDF(paymentSummary, {
+            title: "Payment Summary Report",
+            filename: `payment-summary-${dateFrom}-to-${dateTo}.pdf`
+          });
+          break;
         default:
           throw new Error("Unknown report type");
       }
-      
       toast({
         title: "Report Generated",
         description: "Report has been downloaded successfully"

@@ -2,6 +2,7 @@ import PouchDB from 'pouchdb-browser';
 import PouchDBFind from 'pouchdb-find';
 import { EIPParser, MilkRecord, USBFileProcessor } from '@/utils/eipParser';
 import { User } from './authService';
+import { AuthService } from './authService'; // Add this import
 
 // Configure PouchDB with proper plugin imports
 PouchDB.plugin(PouchDBFind);
@@ -531,6 +532,11 @@ export class DataService {
 
   // Farmer Management Methods
   static async saveFarmer(farmer: any): Promise<string> {
+    // Permission check
+    const user = AuthService.getInstance().getCurrentUser();
+    if (!AuthService.hasPermission(user, 'master')) {
+      throw new Error('You do not have permission to add or edit farmers.');
+    }
     console.log('[DataService] Saving farmer:', farmer);
     try {
       const farmerData = {
@@ -568,6 +574,11 @@ export class DataService {
   }
 
   static async deleteFarmer(farmerId: string): Promise<boolean> {
+    // Permission check
+    const user = AuthService.getInstance().getCurrentUser();
+    if (!AuthService.hasPermission(user, 'master')) {
+      throw new Error('You do not have permission to delete farmers.');
+    }
     console.log('[DataService] Deleting farmer:', farmerId);
     try {
       const farmer = await databases.farmers.local.get(farmerId);
@@ -698,6 +709,95 @@ export class DataService {
     } catch (error) {
       console.error('Error importing data:', error);
       throw error;
+    }
+  }
+
+  // Centre Management Methods
+  static async saveCentre(centre: any): Promise<string> {
+    // Permission check
+    const user = AuthService.getInstance().getCurrentUser();
+    if (!AuthService.hasPermission(user, 'master')) {
+      throw new Error('You do not have permission to add or edit centres.');
+    }
+    try {
+      const centreData = {
+        ...centre,
+        updatedAt: new Date()
+      };
+      const result = await databases.centers.local.put(centreData);
+      this.broadcastChange('centers', 'upsert', centreData);
+      return result.id;
+    } catch (error) {
+      console.error('Error saving centre:', error);
+      throw error;
+    }
+  }
+
+  static async deleteCentre(centreId: string): Promise<boolean> {
+    // Permission check
+    const user = AuthService.getInstance().getCurrentUser();
+    if (!AuthService.hasPermission(user, 'master')) {
+      throw new Error('You do not have permission to delete centres.');
+    }
+    try {
+      const centre = await databases.centers.local.get(centreId);
+      await databases.centers.local.remove(centre);
+      this.broadcastChange('centers', 'delete', { _id: centreId });
+      return true;
+    } catch (error) {
+      console.error('Error deleting centre:', error);
+      return false;
+    }
+  }
+
+  // Milk Price Management Methods
+  static async saveMilkPrice(price: any): Promise<string> {
+    // Permission check
+    const user = AuthService.getInstance().getCurrentUser();
+    if (!AuthService.hasPermission(user, 'system')) {
+      throw new Error('You do not have permission to add or edit milk prices.');
+    }
+    try {
+      const priceData = {
+        ...price,
+        updatedAt: new Date()
+      };
+      const result = await databases.settings.local.put(priceData);
+      this.broadcastChange('settings', 'upsert', priceData);
+      return result.id;
+    } catch (error) {
+      console.error('Error saving milk price:', error);
+      throw error;
+    }
+  }
+
+  static async getMilkPrices(): Promise<any[]> {
+    try {
+      const result = await databases.settings.local.allDocs({ include_docs: true });
+      const prices = result.rows
+        .map(row => row.doc)
+        .filter(doc => doc && doc._id.startsWith('milkprice_'));
+      return prices;
+    } catch (error) {
+      console.error('Error getting milk prices:', error);
+      return [];
+    }
+  }
+
+  static async deleteMilkPrice(priceId: string): Promise<boolean> {
+    // Permission check
+    const user = AuthService.getInstance().getCurrentUser();
+    if (!AuthService.hasPermission(user, 'system')) {
+      throw new Error('You do not have permission to delete milk prices.');
+    }
+    try {
+      const price = await databases.settings.local.get(priceId);
+      await databases.settings.local.remove(price);
+      this.broadcastChange('settings', 'delete', { _id: priceId });
+      return true;
+    } catch (error) {
+      console.error('Error deleting milk price:', error);
+      return false;
     }
   }
 }

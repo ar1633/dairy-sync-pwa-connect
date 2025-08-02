@@ -1,4 +1,3 @@
-
 // PWA Installation and Setup Utilities
 export class PWAInstaller {
   private static deferredPrompt: any = null;
@@ -18,6 +17,11 @@ export class PWAInstaller {
       this.hideInstallBanner();
       this.showWelcomeMessage();
     });
+
+    // Show install banner if installable and not already installed
+    if (!this.isPWA() && this.isInstallable()) {
+      this.showInstallBanner();
+    }
   }
 
   // Show install banner

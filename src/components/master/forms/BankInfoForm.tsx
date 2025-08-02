@@ -28,17 +28,7 @@ interface BankInfo extends BankInfoFormData {
 const BankInfoForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [banks, setBanks] = useState<BankInfo[]>([
-    {
-      id: "1",
-      bankName: "State Bank of India",
-      ifscCode: "SBIN0001234",
-      branchName: "Main Branch",
-      branchAddress: "123 Main Street, City",
-      contactNumber: "9876543210",
-      managerName: "John Doe"
-    }
-  ]);
+  const [banks, setBanks] = useState<BankInfo[]>([]);
   const { toast } = useToast();
 
   const form = useForm<BankInfoFormData>({
@@ -53,32 +43,31 @@ const BankInfoForm = () => {
     },
   });
 
+  React.useEffect(() => {
+    fetch("/api/master-data/banks")
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setBanks(data));
+  }, []);
+
   const onSubmit = async (data: BankInfoFormData) => {
     setIsSubmitting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      if (editingId) {
-        setBanks(prev => prev.map(bank => 
-          bank.id === editingId ? { ...data, id: editingId } : bank
-        ));
-        setEditingId(null);
-        toast({
-          title: "Bank Information Updated",
-          description: "Bank details have been updated successfully.",
-        });
-      } else {
-        const newBank: BankInfo = {
-          ...data,
-          id: Date.now().toString(),
-        };
-        setBanks(prev => [...prev, newBank]);
-        toast({
-          title: "Bank Information Added",
-          description: "New bank has been added successfully.",
-        });
-      }
-      
+      let url = "/api/master-data/banks";
+      let method = editingId ? "PUT" : "POST";
+      let payload = editingId ? { ...data, id: editingId } : data;
+      await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      // Refresh list
+      const updated = await fetch("/api/master-data/banks").then(res => res.json());
+      setBanks(updated);
+      setEditingId(null);
+      toast({
+        title: editingId ? "Bank Information Updated" : "Bank Information Added",
+        description: editingId ? "Bank details have been updated successfully." : "New bank has been added successfully.",
+      });
       form.reset();
     } catch (error) {
       toast({
@@ -96,7 +85,8 @@ const BankInfoForm = () => {
     form.reset(bank);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
+    await fetch(`/api/master-data/banks/${id}`, { method: "DELETE" });
     setBanks(prev => prev.filter(bank => bank.id !== id));
     toast({
       title: "Bank Deleted",

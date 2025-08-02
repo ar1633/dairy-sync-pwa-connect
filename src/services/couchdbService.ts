@@ -6,7 +6,7 @@ const COUCHDB_CONFIG = {
   port: 5984,
   protocol: window.location.protocol === 'https:' ? 'https' : 'http',
   username: 'admin',
-  password: 'password', // This should be configured during setup
+  password: 'admin123', // Set default admin password
 };
 
 export class CouchDBService {

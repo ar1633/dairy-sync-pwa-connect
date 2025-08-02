@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash2, Edit, Plus, Download } from "lucide-react";
+import { DataService } from "@/services/dataService";
 import { toast } from "@/hooks/use-toast";
 import { PDFService } from "@/services/pdfService";
 
@@ -25,20 +26,7 @@ interface MilkPrice {
 }
 
 const MilkPriceManagement = () => {
-  const [prices, setPrices] = useState<MilkPrice[]>([
-    {
-      id: "1",
-      centreId: "001",
-      centreName: "Main Dairy Centre",
-      milkType: "cow",
-      fat: 3.5,
-      degree: 28.0,
-      snf: 8.5,
-      rate: 25.50,
-      time: "morning"
-    }
-  ]);
-
+  const [prices, setPrices] = useState<MilkPrice[]>([]);
   const [formData, setFormData] = useState({
     centreId: "",
     centreName: "",
@@ -49,26 +37,34 @@ const MilkPriceManagement = () => {
     rate: "",
     time: "morning" as ShiftTime
   });
-
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [language, setLanguage] = useState<"english" | "marathi">("english");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Fetch prices from backend on mount
+  useEffect(() => {
+    const fetchPrices = async () => {
+      const priceList = await DataService.getMilkPrices();
+      setPrices(priceList);
+    };
+    fetchPrices();
+  }, []);
+
+  // Save to backend
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (isEditing && editingId) {
-      setPrices(prices.map(price => 
-        price.id === editingId 
-          ? {
-              ...formData,
-              id: editingId,
-              fat: parseFloat(formData.fat),
-              degree: parseFloat(formData.degree),
-              snf: parseFloat(formData.snf),
-              rate: parseFloat(formData.rate)
-            }
-          : price
+      const updatedPrice = {
+        ...formData,
+        id: editingId,
+        fat: parseFloat(formData.fat),
+        degree: parseFloat(formData.degree),
+        snf: parseFloat(formData.snf),
+        rate: parseFloat(formData.rate)
+      };
+      await DataService.saveMilkPrice({ ...updatedPrice, _id: editingId });
+      setPrices(prices.map(price =>
+        price.id === editingId ? updatedPrice : price
       ));
       toast({
         title: language === "english" ? "Price Updated" : "दर अपडेट केला",
@@ -77,12 +73,13 @@ const MilkPriceManagement = () => {
     } else {
       const newPrice: MilkPrice = {
         ...formData,
-        id: Date.now().toString(),
+        id: `milkprice_${Date.now()}`,
         fat: parseFloat(formData.fat),
         degree: parseFloat(formData.degree),
         snf: parseFloat(formData.snf),
         rate: parseFloat(formData.rate)
       };
+      await DataService.saveMilkPrice({ ...newPrice, _id: newPrice.id });
       setPrices([...prices, newPrice]);
       toast({
         title: language === "english" ? "Price Added" : "दर जोडला",
@@ -116,7 +113,9 @@ const MilkPriceManagement = () => {
     setEditingId(price.id);
   };
 
-  const handleDelete = (id: string) => {
+  // Delete from backend
+  const handleDelete = async (id: string) => {
+    await DataService.deleteMilkPrice(id);
     setPrices(prices.filter(price => price.id !== id));
     toast({
       title: language === "english" ? "Price Deleted" : "दर हटवला",
@@ -373,4 +372,5 @@ const MilkPriceManagement = () => {
 
 export default MilkPriceManagement;
 
+console.log('[LOG] Loaded src/components/master/MilkPriceManagement.tsx');
 console.log('[LOG] Loaded src/components/master/MilkPriceManagement.tsx');

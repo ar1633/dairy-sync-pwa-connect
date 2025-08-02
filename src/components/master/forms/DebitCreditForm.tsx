@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,15 +45,15 @@ const DebitCreditForm = () => {
   const onSubmit = async (data: DebitCreditFormData) => {
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await fetch("/api/master-data/debit-credit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
       toast({
         title: "Entry Saved",
         description: `${data.type === 'debit' ? 'Debit' : 'Credit'} entry has been saved successfully.`,
       });
-      
-      console.log("Debit/Credit entry saved:", data);
       form.reset();
     } catch (error) {
       toast({

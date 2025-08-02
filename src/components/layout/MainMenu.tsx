@@ -1,40 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Download, Smartphone } from 'lucide-react';
-import { PWAInstaller } from '@/utils/pwaInstaller';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Download, Smartphone } from "lucide-react";
+import { PWAInstaller } from "@/utils/pwaInstaller";
+import { toast } from "sonner";
 
-const PWAInstallButton = () => {
+const PWAInstallMenuItem = () => {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
 
   useEffect(() => {
     // Initialize PWA installer
     PWAInstaller.initialize();
-    
+
     // Remove duplicate initialization
     setIsPWA(PWAInstaller.isPWA());
-    
+
     // Listen for install prompt availability
     const handleBeforeInstallPrompt = () => {
       setIsInstallable(true);
     };
-    
+
     const handleAppInstalled = () => {
       setIsInstallable(false);
       setIsPWA(true);
-      toast.success('App installed successfully!');
+      toast.success("App installed successfully!");
     };
-    
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-    
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
     // Always check installable state on mount
     setIsInstallable(PWAInstaller.isInstallable());
-    
+
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
 
@@ -46,8 +46,8 @@ const PWAInstallButton = () => {
         PWAInstaller.showManualInstallInstructions();
       }
     } catch (error) {
-      console.error('Install failed:', error);
-      toast.error('Installation failed. Please try again.');
+      console.error("Install failed:", error);
+      toast.error("Installation failed. Please try again.");
     }
   };
 
@@ -57,24 +57,24 @@ const PWAInstallButton = () => {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="flex items-center gap-2">
       {isInstallable ? (
         <Button
           onClick={handleInstall}
-          className="bg-green-600 hover:bg-green-700 text-white shadow-lg"
-          size="lg"
+          className="bg-green-600 hover:bg-green-700 text-white"
+          size="sm"
         >
-          <Download className="h-5 w-5 mr-2" />
+          <Download className="h-4 w-4 mr-2" />
           Install App
         </Button>
       ) : (
         <Button
           onClick={() => PWAInstaller.showManualInstallInstructions()}
           variant="outline"
-          className="bg-white/90 backdrop-blur-sm shadow-lg"
-          size="lg"
+          className="bg-white/90 backdrop-blur-sm"
+          size="sm"
         >
-          <Smartphone className="h-5 w-5 mr-2" />
+          <Smartphone className="h-4 w-4 mr-2" />
           Install Guide
         </Button>
       )}
@@ -82,4 +82,4 @@ const PWAInstallButton = () => {
   );
 };
 
-export default PWAInstallButton;
+export default PWAInstallMenuItem;

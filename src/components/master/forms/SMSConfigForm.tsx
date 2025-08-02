@@ -39,12 +39,23 @@ const SMSConfigForm = () => {
     },
   });
 
+  React.useEffect(() => {
+    // Fetch config from backend
+    fetch("/api/master-data/sms-config")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) form.reset(data);
+      });
+  }, []);
+
   const onSubmit = async (data: SMSConfigFormData) => {
     setIsSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await fetch("/api/master-data/sms-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
       toast({
         title: "SMS Configuration Saved",
         description: "SMS settings have been updated successfully.",

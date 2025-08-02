@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,15 +45,15 @@ const OutflowForm = () => {
   const onSubmit = async (data: OutflowFormData) => {
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await fetch("/api/master-data/outflow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
       toast({
         title: "Outflow Recorded",
         description: "Cash outflow entry has been saved successfully.",
       });
-      
-      console.log("Outflow entry saved:", data);
       form.reset();
     } catch (error) {
       toast({

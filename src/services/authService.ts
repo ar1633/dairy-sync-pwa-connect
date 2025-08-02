@@ -279,4 +279,10 @@ export class AuthService {
       return { success: false, message: 'Failed to change password' };
     }
   }
+
+  // Check if user has a specific permission
+  static hasPermission(user: User | null, permission: keyof User['permissions']): boolean {
+    if (!user || !user.permissions) return false;
+    return !!user.permissions[permission];
+  }
 }

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PieChart, Receipt, Users, MessageSquare, Download, Send } from "lucide-react";
 import { PDFService } from "@/services/pdfService";
 import { toast } from "@/hooks/use-toast";
+import { DataService } from "@/services/dataService";
 
 const DairyReportsSection = () => {
   const [selectedReport, setSelectedReport] = useState("");
@@ -15,39 +15,23 @@ const DairyReportsSection = () => {
   const [messageText, setMessageText] = useState("");
   const [selectedGroup, setSelectedGroup] = useState("all");
 
-  const generateProfitLossReport = () => {
-    const data = {
-      totalRevenue: 245000,
-      totalExpenses: 185000,
-      profit: 60000,
-      expenses: [
-        { category: "Fodder", amount: 85000 },
-        { category: "Transportation", amount: 35000 },
-        { category: "Maintenance", amount: 25000 },
-        { category: "Staff Salary", amount: 40000 }
-      ]
-    };
-
+  const generateProfitLossReport = async () => {
+    // Fetch real profit/loss data from backend
+    const data = await DataService.getProfitLossReport();
     PDFService.generateBusinessReportPDF(data, {
       title: "Profit & Loss Report",
       filename: `profit-loss-${new Date().toISOString().split('T')[0]}.pdf`
     });
-
     toast({
       title: "Report Generated",
       description: "Profit & Loss report downloaded successfully"
     });
   };
 
-  const generateSalarySlips = () => {
-    const employees = [
-      { name: "John Doe", position: "Manager", salary: 25000, deductions: 2500 },
-      { name: "Jane Smith", position: "Supervisor", salary: 18000, deductions: 1800 },
-      { name: "Mike Johnson", position: "Operator", salary: 15000, deductions: 1500 }
-    ];
-
-    // Create salary slip PDF for each employee
-    employees.forEach(emp => {
+  const generateSalarySlips = async () => {
+    // Fetch real employee salary data from backend
+    const employees = await DataService.getEmployeeSalaries();
+    for (const emp of employees) {
       PDFService.generateBusinessReportPDF({
         employeeName: emp.name,
         position: emp.position,
@@ -58,8 +42,7 @@ const DairyReportsSection = () => {
         title: `Salary Slip - ${emp.name}`,
         filename: `salary-slip-${emp.name.replace(' ', '-')}-${new Date().toISOString().split('T')[0]}.pdf`
       });
-    });
-
+    }
     toast({
       title: "Salary Slips Generated",
       description: `Generated salary slips for ${employees.length} employees`
@@ -221,5 +204,7 @@ const DairyReportsSection = () => {
     </div>
   );
 };
+
+
 
 export default DairyReportsSection;

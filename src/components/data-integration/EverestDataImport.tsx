@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -92,38 +91,19 @@ const EverestDataImport = () => {
     }, 200);
   };
 
-  const importData = () => {
+  const importData = async () => {
     setIsImporting(true);
     setImportProgress(0);
-    
-    // Simulate data import
+    // Simulate data import progress
     const interval = setInterval(() => {
       setImportProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
           setIsImporting(false);
-          
-          // Add new readings
-          const newReadings: MilkReading[] = [
-            {
-              id: Date.now().toString(),
-              farmerId: "F003",
-              farmerName: "मोहन कुमार",
-              centreId: "C001",
-              dateTime: new Date().toISOString().slice(0, 19).replace('T', ' '),
-              shift: "morning",
-              quantity: 4.5,
-              fat: 4.2,
-              snf: 8.7,
-              degree: 29.1,
-              rate: 33.00,
-              amount: 148.50,
-              status: "pending"
-            }
-          ];
-          
-          setMilkReadings(prev => [...newReadings, ...prev]);
-          
+          // Fetch new readings from backend
+          fetch("/api/everest-data")
+            .then(res => res.ok ? res.json() : [])
+            .then(newReadings => setMilkReadings(prev => [...newReadings, ...prev]));
           toast({
             title: language === "english" ? "Data Imported" : "डेटा आयात केला",
             description: language === "english" ? "New milk readings imported successfully" : "नवीन दूध रीडिंग यशस्वीरित्या आयात केले"
@@ -333,5 +313,6 @@ const EverestDataImport = () => {
     </div>
   );
 };
+
 
 export default EverestDataImport;

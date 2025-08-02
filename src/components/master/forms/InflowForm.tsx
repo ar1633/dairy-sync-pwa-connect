@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -44,15 +43,15 @@ const InflowForm = () => {
   const onSubmit = async (data: InflowFormData) => {
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await fetch("/api/master-data/inflow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
       toast({
         title: "Inflow Recorded",
         description: "Cash inflow entry has been saved successfully.",
       });
-      
-      console.log("Inflow entry saved:", data);
       form.reset();
     } catch (error) {
       toast({
@@ -195,5 +194,6 @@ const InflowForm = () => {
     </Card>
   );
 };
+
 
 export default InflowForm;
