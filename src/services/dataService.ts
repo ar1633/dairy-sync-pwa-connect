@@ -2,7 +2,6 @@ import PouchDB from 'pouchdb-browser';
 import PouchDBFind from 'pouchdb-find';
 import { EIPParser, MilkRecord, USBFileProcessor } from '@/utils/eipParser';
 import { User } from './authService';
-import { AuthService } from './authService'; // Add this import
 
 // Configure PouchDB with proper plugin imports
 PouchDB.plugin(PouchDBFind);
@@ -532,11 +531,6 @@ export class DataService {
 
   // Farmer Management Methods
   static async saveFarmer(farmer: any): Promise<string> {
-    // Permission check
-    const user = AuthService.getInstance().getCurrentUser();
-    if (!AuthService.hasPermission(user, 'master')) {
-      throw new Error('You do not have permission to add or edit farmers.');
-    }
     console.log('[DataService] Saving farmer:', farmer);
     try {
       const farmerData = {
@@ -574,11 +568,6 @@ export class DataService {
   }
 
   static async deleteFarmer(farmerId: string): Promise<boolean> {
-    // Permission check
-    const user = AuthService.getInstance().getCurrentUser();
-    if (!AuthService.hasPermission(user, 'master')) {
-      throw new Error('You do not have permission to delete farmers.');
-    }
     console.log('[DataService] Deleting farmer:', farmerId);
     try {
       const farmer = await databases.farmers.local.get(farmerId);
@@ -627,7 +616,7 @@ export class DataService {
           const info = await db.local.info();
           stats[name] = {
             count: info.doc_count,
-            size: (info as any).data_size || 0
+            size: info.disk_size || 0
           };
         } catch (error) {
           console.error(`Error getting stats for ${name}:`, error);
@@ -642,6 +631,7 @@ export class DataService {
     }
   }
   
+
   // Broadcast method for change notifications
   static broadcastChange(database: string, action: string, data: any): void {
     console.log('[DataService] Broadcasting change:', database, action, data);
