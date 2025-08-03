@@ -2,6 +2,7 @@ import PouchDB from 'pouchdb-browser';
 import PouchDBFind from 'pouchdb-find';
 import { EIPParser, MilkRecord, USBFileProcessor } from '@/utils/eipParser';
 import { User } from './authService';
+import { AuthService } from './authService';
 
 // Configure PouchDB with proper plugin imports
 PouchDB.plugin(PouchDBFind);
@@ -616,7 +617,7 @@ export class DataService {
           const info = await db.local.info();
           stats[name] = {
             count: info.doc_count,
-            size: info.disk_size || 0
+            size: (info as any).data_size || 0
           };
         } catch (error) {
           console.error(`Error getting stats for ${name}:`, error);
@@ -630,7 +631,7 @@ export class DataService {
       return {};
     }
   }
-  
+
 
   // Broadcast method for change notifications
   static broadcastChange(database: string, action: string, data: any): void {
@@ -967,7 +968,7 @@ export class DataService {
     }
   }
 
-  // Get milk collections
+  // Get milk collections (modified to remove duplicate)
   static async getMilkCollections() {
     console.log('[DataService] getMilkCollections');
     try {

@@ -40,14 +40,19 @@ const MilkPriceManagement = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [language, setLanguage] = useState<"english" | "marathi">("english");
+  const [centres, setCentres] = useState<any[]>([]);
 
-  // Fetch prices from backend on mount
+  // Fetch prices and centres from backend on mount
   useEffect(() => {
-    const fetchPrices = async () => {
-      const priceList = await DataService.getMilkPrices();
+    const fetchData = async () => {
+      const [priceList, centresList] = await Promise.all([
+        DataService.getMilkPrices(),
+        DataService.getCentres()
+      ]);
       setPrices(priceList);
+      setCentres(centresList);
     };
-    fetchPrices();
+    fetchData();
   }, []);
 
   // Save to backend
@@ -184,21 +189,37 @@ const MilkPriceManagement = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>{language === "english" ? "Centre ID" : "केंद्र आयडी"}</Label>
-                  <Input
-                    value={formData.centreId}
-                    onChange={(e) => setFormData({...formData, centreId: e.target.value})}
-                    placeholder={language === "english" ? "Centre ID" : "केंद्र आयडी"}
-                    required
-                  />
+                  <Label>{language === "english" ? "Centre" : "केंद्र"}</Label>
+                  <Select 
+                    value={formData.centreId} 
+                    onValueChange={(value) => {
+                      const selectedCentre = centres.find(c => c._id === value);
+                      setFormData({
+                        ...formData, 
+                        centreId: value,
+                        centreName: selectedCentre?.name || selectedCentre?.centerName || ''
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={language === "english" ? "Select centre" : "केंद्र निवडा"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {centres.map((centre) => (
+                        <SelectItem key={centre._id} value={centre._id}>
+                          {centre.centerCode || centre._id} - {centre.name || centre.centerName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>{language === "english" ? "Centre Name" : "केंद्राचे नाव"}</Label>
                   <Input
                     value={formData.centreName}
-                    onChange={(e) => setFormData({...formData, centreName: e.target.value})}
+                    readOnly
                     placeholder={language === "english" ? "Centre Name" : "केंद्राचे नाव"}
-                    required
+                    className="bg-muted"
                   />
                 </div>
               </div>

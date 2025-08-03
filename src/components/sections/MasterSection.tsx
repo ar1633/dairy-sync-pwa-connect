@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building2, Users, ShoppingCart, DollarSign, Truck, Package } from "lucide-react";
@@ -8,11 +8,45 @@ import MilkBuyersManagement from "@/components/master/MilkBuyersManagement";
 import MilkPriceManagement from "@/components/master/MilkPriceManagement";
 import FodderManagement from "@/components/master/FodderManagement";
 import OtherMasterData from "@/components/master/OtherMasterData";
+import { DataService } from "@/services/dataService";
 
 type MasterSubSection = 'overview' | 'centres' | 'farmers' | 'buyers' | 'pricing' | 'fodder' | 'other';
 
 const MasterSection = () => {
   const [activeSubSection, setActiveSubSection] = useState<MasterSubSection>('overview');
+  const [counts, setCounts] = useState({
+    centres: 0,
+    farmers: 0,
+    buyers: 0,
+    fodderProviders: 0,
+    milkPrices: 0
+  });
+
+  useEffect(() => {
+    loadCounts();
+  }, []);
+
+  const loadCounts = async () => {
+    try {
+      const [centres, farmers, buyers, fodderProviders, milkPrices] = await Promise.all([
+        DataService.getCentres(),
+        DataService.getFarmers(),
+        DataService.getMilkBuyers(),
+        DataService.getFodderProviders(),
+        DataService.getMilkPrices()
+      ]);
+
+      setCounts({
+        centres: centres.length,
+        farmers: farmers.length,
+        buyers: buyers.length,
+        fodderProviders: fodderProviders.length,
+        milkPrices: milkPrices.length
+      });
+    } catch (error) {
+      console.error('Error loading counts:', error);
+    }
+  };
 
   const subSections = [
     { 
@@ -20,35 +54,35 @@ const MasterSection = () => {
       name: 'Centre Information', 
       icon: Building2, 
       description: 'Manage dairy centres and locations',
-      count: '3 centres'
+      count: `${counts.centres} centres`
     },
     { 
       id: 'farmers' as MasterSubSection, 
       name: 'Farmer Information', 
       icon: Users, 
       description: 'Add and manage farmer details',
-      count: '245 farmers'
+      count: `${counts.farmers} farmers`
     },
     { 
       id: 'buyers' as MasterSubSection, 
       name: 'Milk Buyers', 
       icon: ShoppingCart, 
       description: 'Manage milk buyers and commission',
-      count: '12 buyers'
+      count: `${counts.buyers} buyers`
     },
     { 
       id: 'pricing' as MasterSubSection, 
       name: 'Milk Pricing', 
       icon: DollarSign, 
       description: 'Set milk rates by fat, SNF and time',
-      count: 'Updated today'
+      count: `${counts.milkPrices} price entries`
     },
     { 
       id: 'fodder' as MasterSubSection, 
       name: 'Animal Fodder', 
       icon: Package, 
       description: 'Manage fodder providers and inventory',
-      count: '8 providers'
+      count: `${counts.fodderProviders} providers`
     },
     { 
       id: 'other' as MasterSubSection, 
